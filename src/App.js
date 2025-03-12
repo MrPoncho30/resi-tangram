@@ -23,17 +23,23 @@
 
 // export default App;
 
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import CreateTeacherForm from './components/createTeacher';
 import Dashboard from './components/dashboard';
+import AddStudent from './components/addStudent';  
+import StudentPage from './components/studentPage'; 
 
 function App() {
+  const [students, setStudents] = useState([]);
+
   return (
     <Router>
       <Routes>
         <Route path="/" element={<CreateTeacherForm />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard students={students} />} />
+        <Route path="/addStudent" element={<AddStudent addStudent={setStudents} />} />
+        <Route path="/studentPage" element={<StudentPage students={students} />} />
       </Routes>
     </Router>
   );

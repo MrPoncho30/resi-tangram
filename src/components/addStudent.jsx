@@ -4,15 +4,11 @@ const AddStudent = ({ addStudent }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [nickname, setNickname] = useState('');
-  const [age, setAge] = useState('');
-  const [grade, setGrade] = useState('');
-  const [group, setGroup] = useState('');
+  const [gradeAndGroup, setGradeAndGroup] = useState('');
   const [schoolYear, setSchoolYear] = useState('');
 
-  //año actual
   const currentYear = new Date().getFullYear();
 
-  // 2025-2026
   const schoolYearOptions = Array.from({ length: 10 }, (_, i) => {
     const startYear = currentYear + i;
     return `${startYear}-${startYear + 1}`;
@@ -20,24 +16,20 @@ const AddStudent = ({ addStudent }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (firstName && lastName && nickname && age && grade && group && schoolYear) {
+    if (firstName && lastName && nickname && gradeAndGroup && schoolYear) {
       const newStudent = { 
         id: Date.now(),
         firstName, 
         lastName, 
         nickname, 
-        age, 
-        grade, 
-        group,
+        gradeAndGroup,
         schoolYear
       };
       addStudent(newStudent);
       setFirstName('');
       setLastName('');
       setNickname('');
-      setAge('');
-      setGrade('');
-      setGroup('');
+      setGradeAndGroup('');
       setSchoolYear('');
     }
   };
@@ -80,42 +72,14 @@ const AddStudent = ({ addStudent }) => {
         </div>
 
         <div>
-          <label className="block text-gray-700 font-medium mb-2">Edad</label>
+          <label className="block text-gray-700 font-medium mb-2">Salón</label>
           <input
-            type="number"
-            value={age}
-            onChange={(e) => setAge(e.target.value)}
+            type="text"
+            value={gradeAndGroup}
+            onChange={(e) => setGradeAndGroup(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-            placeholder="Ingrese la edad"
+            placeholder="Ingrese el grado y grupo (Ej. 1A)"
           />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 font-medium mb-2">Grado</label>
-          <select
-            value={grade}
-            onChange={(e) => setGrade(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            <option value="">Selecciona el grado</option>
-            {[1, 2, 3, 4, 5, 6].map((gradeNumber) => (
-              <option key={gradeNumber} value={gradeNumber}>{gradeNumber}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-gray-700 font-medium mb-2">Grupo</label>
-          <select
-            value={group}
-            onChange={(e) => setGroup(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            <option value="">Selecciona el grupo</option>
-            {['A', 'B', 'C', 'D'].map((groupLetter) => (
-              <option key={groupLetter} value={groupLetter}>{groupLetter}</option>
-            ))}
-          </select>
         </div>
 
         <div>
