@@ -23,26 +23,32 @@
 
 // export default App;
 
-import React, { useState } from 'react';
+// import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import CreateTeacherForm from './components/createTeacher';
 import Dashboard from './components/dashboard';
-import AddStudent from './components/addStudent';  
-import StudentPage from './components/studentPage'; 
+// import AddStudent from './components/addStudent';  
+// import StudentPage from './components/studentPage'; 
+import LoginTeacher from './components/loginTeacher';
+import Salones from './components/salones';
+import ClassroomStudents from './components/classroom_students'
 
 function App() {
-  const [students, setStudents] = useState([]);
-
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<CreateTeacherForm />} />
-        <Route path="/dashboard" element={<Dashboard students={students} />} />
-        <Route path="/addStudent" element={<AddStudent addStudent={setStudents} />} />
-        <Route path="/studentPage" element={<StudentPage students={students} />} />
+        <Route path="/" element={<LoginTeacher/>} />
+        <Route path="/createTeacher" element={<CreateTeacherForm />} />
+        <Route path="/loginTeacher" element={<LoginTeacher/>} />
+        <Route path="/salones" element={<Salones/>} />
+        <Route path="/dashboard" element={<Dashboard/>} />
+        <Route path="/salon/:id/alumnos" element={<ClassroomStudents />} />
+        {/* <Route path="/addStudent" element={<AddStudent addStudent={setStudents} />} />
+        <Route path="/studentPage" element={<StudentPage students={students} />} /> */}
       </Routes>
     </Router>
   );
 }
+
 
 export default App;

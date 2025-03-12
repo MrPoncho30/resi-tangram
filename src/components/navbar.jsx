@@ -3,9 +3,30 @@ import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
   const navigate = useNavigate();
+ 
+  function getCSRFToken() {
+    return document.cookie.split('; ')
+        .find(row => row.startsWith('csrftoken'))
+        ?.split('=')[1];
+}
 
-  const handleAlumnosClick = () => {
-    navigate('/studentPage');
+  const handleLogout = async () => {
+    try {
+      await fetch('https://372a-2806-10b7-3-4adc-81df-b7de-1fd0-f948.ngrok-free.app/maestros/api/cerrar_sesion_maestro/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken(),
+        },
+      });
+
+      
+      localStorage.removeItem('authToken');
+
+      navigate('/loginTeacher');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
 
   return (
@@ -18,16 +39,17 @@ const Navbar = () => {
         <li className="mb-3 hover:bg-gray-700 p-2 rounded cursor-pointer">
           <Link to="/actividades">Actividades</Link>
         </li>
-        <li
+      
+        {/* <li
           className="mb-3 hover:bg-gray-700 p-2 rounded cursor-pointer"
           onClick={handleAlumnosClick}
         >
           Alumnos
-        </li>
+        </li> */}
       </ul>
       <button
-        onClick={() => alert('Cerrar sesión')}
-        className="mt-6 w-full bg-red-500 hover:bg-red-600 p-2 rounded"
+        onClick={handleLogout}
+        className="mt-6 w-full bg-blue-500 hover:bg-red-600 p-2 rounded"
       >
         Salir
       </button>
