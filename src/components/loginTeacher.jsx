@@ -4,7 +4,6 @@ import { FaEnvelope, FaLock } from 'react-icons/fa';
 import myImage from '../assets/latuyacrack.png'; 
 import myLogo from '../assets/logo_tan.png';
 
-
 function LoginTeacher() {
   const [correo, setEmail] = useState('');
   const [contrasena, setPassword] = useState('');
@@ -16,28 +15,40 @@ function LoginTeacher() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+  
     const loginData = {
       correo,
       contrasena,
     };
-
-    
+  
     try {
       setLoading(true);
-
-      const response = await fetch('https://372a-2806-10b7-3-4adc-81df-b7de-1fd0-f948.ngrok-free.app/maestros/api/autentificar_maestro/', {
+  
+      const response = await fetch('https://cbf9-2806-10b7-3-1855-10c5-aea6-cd23-9eed.ngrok-free.app/maestros/api/autentificar_maestro/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(loginData),
       });
-
+  
       const result = await response.json();
-
+  
       if (response.ok) {
         console.log('Inicio de sesión exitoso:', result);
+  
+        // Guardar el ID del maestro con la clave "maestro" (utilizando el campo correcto: id_maestro)
+        if (result.id_maestro) {
+          localStorage.setItem('maestro', result.id_maestro); // Aquí guardamos el id_maestro
+        }
+  
+        // Mostrar el ID del maestro en la consola o en el UI
+        const teacherId = localStorage.getItem('maestro');
+        console.log('ID del maestro:', teacherId);
+  
+        // Si deseas mostrar el ID en la interfaz
+        alert(`ID del Maestro: ${teacherId}`);  // Muestra en un alert o puedes colocar en el componente
+  
         navigate('/dashboard');
       } else {
         setError(result.message || 'Credenciales incorrectas');
@@ -49,6 +60,7 @@ function LoginTeacher() {
       setLoading(false);
     }
   };
+  
 
   const handleCreateTeacher = () => {
     navigate('/createTeacher');
@@ -56,16 +68,15 @@ function LoginTeacher() {
 
   return (
     <div className="min-h-screen flex">
-      <div className="w-1/2 bg-cover bg-center"style={{ backgroundImage: `url(${myImage})` }}>
-      </div>
+      <div className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(${myImage})` }}></div>
 
       {/* Lado derecho: Formulario */}
       <div className="w-full md:w-1/2 p-8 flex items-center justify-center bg-gradient-to-r from-indigo-300 to-blue-200">
 
         <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl">
-        <div className="flex justify-center mb-4">
-          <img src={myLogo} alt="Logo" className="h-16 w-16" />
-        </div>
+          <div className="flex justify-center mb-4">
+            <img src={myLogo} alt="Logo" className="h-16 w-16" />
+          </div>
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Iniciar Sesión</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
