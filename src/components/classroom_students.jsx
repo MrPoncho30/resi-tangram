@@ -11,9 +11,9 @@ const ClassroomStudents = () => {
   const [showModal, setShowModal] = useState(false);
   const [showEquipoModal, setShowEquipoModal] = useState(false);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
-  const [showRemoveStudentModal, setShowRemoveStudentModal] = useState(false); // Nuevo modal para quitar estudiante
+  const [showRemoveStudentModal, setShowRemoveStudentModal] = useState(false); 
   const [selectedEquipoIndex, setSelectedEquipoIndex] = useState(null);
-  const [selectedAlumnoForRemoval, setSelectedAlumnoForRemoval] = useState(null); // Alumno seleccionado para quitar
+  const [selectedAlumnoForRemoval, setSelectedAlumnoForRemoval] = useState(null); 
   const [formData, setFormData] = useState({
     nombre: '',
     apellidos: '',

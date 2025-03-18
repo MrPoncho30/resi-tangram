@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
 import { FaArrowLeft } from 'react-icons/fa';
 
-const API_URL = 'https://cbf9-2806-10b7-3-1855-10c5-aea6-cd23-9eed.ngrok-free.app/salones/api/crear_salones/'; 
+const API_URL = 'https://7bf4-189-172-105-252.ngrok-free.app/salones/api/crear_salones/';
 
 const Salones = () => {
   const navigate = useNavigate();
@@ -17,24 +17,36 @@ const Salones = () => {
   });
 
   useEffect(() => {
-    const teacherId = localStorage.getItem("maestro"); // Recuperar ID del maestro
+    const teacherId = localStorage.getItem("maestro");
     if (!teacherId) {
       console.error("Error: No se encontró el ID del maestro en localStorage");
       return;
     }
-  
-    fetch(API_URL)
-      .then(response => response.json())
-      .then(data => {
-        console.log('Datos de la API:', data); // Agrega este log para verificar los datos de la API
-        // Filtrar los salones por el ID del docente
-        const filteredSalones = data.filter(salon => salon.docente === parseInt(teacherId));
-        console.log('Salones filtrados:', filteredSalones); // Verifica los salones filtrados
-        setSalones(filteredSalones); // Actualizar el estado con los salones filtrados
-      })
-      .catch(error => console.error('Error cargando salones:', error));
-  }, []);
-  
+
+    const savedSalones = JSON.parse(localStorage.getItem('salones'));
+    if (savedSalones) {
+      console.log('Salones desde localStorage:', savedSalones);
+      const filteredSalones = savedSalones.filter(salon => salon.docente === parseInt(teacherId));
+      setSalones(filteredSalones);
+    }
+
+    if (!savedSalones || savedSalones.length === 0) {
+      fetch(API_URL)
+        .then(response => response.json())
+        .then(data => {
+          console.log('Datos de la API:', data); // Verifica los datos de la API
+
+          const filteredSalones = data.filter(salon => salon.docente === parseInt(teacherId));
+          console.log('Salones filtrados:', filteredSalones);
+
+          setSalones(filteredSalones);
+
+          localStorage.setItem('salones', JSON.stringify(filteredSalones));
+        })
+        .catch(error => console.error('Error cargando salones:', error));
+    }
+
+  }, []); 
 
   const handleRegisterSalon = async () => {
     const teacherId = localStorage.getItem("maestro"); // Recuperar ID del maestro
@@ -65,7 +77,14 @@ const Salones = () => {
       }
 
       const newSalon = await response.json();
-      setSalones(prevSalones => [...prevSalones, newSalon]);
+      console.log("Respuesta completa de la API:", newSalon);
+      console.log("Salón creado con ID:", newSalon?.id ?? "No se recibió ID");
+
+      setSalones(prevSalones => {
+        const updatedSalones = [...prevSalones, newSalon];
+        localStorage.setItem('salones', JSON.stringify(updatedSalones)); // Guardar en localStorage
+        return updatedSalones;
+      });
 
       setShowModal(false);
 
@@ -116,7 +135,6 @@ const Salones = () => {
       </tbody>
     </table>
   );
-  
 
   return (
     <div className="min-h-screen bg-gray-100 flex">

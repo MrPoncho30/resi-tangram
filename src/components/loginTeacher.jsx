@@ -24,7 +24,7 @@ function LoginTeacher() {
     try {
       setLoading(true);
   
-      const response = await fetch('https://cbf9-2806-10b7-3-1855-10c5-aea6-cd23-9eed.ngrok-free.app/maestros/api/autentificar_maestro/', {
+      const response = await fetch('https://7bf4-189-172-105-252.ngrok-free.app/maestros/api/autentificar_maestro/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,17 +37,14 @@ function LoginTeacher() {
       if (response.ok) {
         console.log('Inicio de sesión exitoso:', result);
   
-        // Guardar el ID del maestro con la clave "maestro" (utilizando el campo correcto: id_maestro)
         if (result.id_maestro) {
-          localStorage.setItem('maestro', result.id_maestro); // Aquí guardamos el id_maestro
+          localStorage.setItem('maestro', result.id_maestro); 
         }
   
-        // Mostrar el ID del maestro en la consola o en el UI
         const teacherId = localStorage.getItem('maestro');
         console.log('ID del maestro:', teacherId);
   
-        // Si deseas mostrar el ID en la interfaz
-        alert(`ID del Maestro: ${teacherId}`);  // Muestra en un alert o puedes colocar en el componente
+        alert(`ID del Maestro: ${teacherId}`);  // Muestra en un alert
   
         navigate('/dashboard');
       } else {
