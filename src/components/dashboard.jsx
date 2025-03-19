@@ -8,6 +8,11 @@ const Dashboard = () => {
   const handleSalones = () => {
     navigate('../salones');
   };
+
+  const handleActivities = () => {
+    navigate('../activitiesPanel')
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex">
       <Navbar />
@@ -30,6 +35,13 @@ const Dashboard = () => {
           <div className="bg-white p-4 rounded-lg shadow-md">
             <h2 className="text-lg font-semibold mb-2">Actividades</h2>
             <p>Descripción de las actividades.</p>
+            <br></br>
+            <button
+                onClick={handleActivities}
+                className="w-48 bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-800 transition"
+              >
+                Ver más
+              </button>
           </div>
         </div>
       </div>

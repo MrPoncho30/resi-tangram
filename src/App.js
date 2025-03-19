@@ -32,7 +32,7 @@ import Dashboard from './components/dashboard';
 import LoginTeacher from './components/loginTeacher';
 import Salones from './components/salones';
 import ClassroomStudents from './components/classroom_students'
-
+import ActivitiesPanel from './components/activitiesPanel';
 function App() {
   return (
     <Router>
@@ -43,6 +43,7 @@ function App() {
         <Route path="/salones" element={<Salones/>} />
         <Route path="/dashboard" element={<Dashboard/>} />
         <Route path="/salon/:id/alumnos" element={<ClassroomStudents />} />
+        <Route path="/activitiesPanel" element={<ActivitiesPanel/>}/>
         {/* <Route path="/addStudent" element={<AddStudent addStudent={setStudents} />} />
         <Route path="/studentPage" element={<StudentPage students={students} />} /> */}
       </Routes>

@@ -38,7 +38,7 @@ function CreateTeacherForm() {
     try {
       setLoading(true);
       
-      const response = await fetch('https://7bf4-189-172-105-252.ngrok-free.app/maestros/api/crear_maestros/', {
+      const response = await fetch('https://4367-2806-10b7-3-7dbd-48c6-c626-58a6-f949.ngrok-free.app/maestros/api/crear_maestros/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

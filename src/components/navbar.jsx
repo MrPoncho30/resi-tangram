@@ -12,7 +12,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch('https://cbf9-2806-10b7-3-1855-10c5-aea6-cd23-9eed.ngrok-free.app/maestros/api/cerrar_sesion_maestro/', {
+      await fetch('https://4367-2806-10b7-3-7dbd-48c6-c626-58a6-f949.ngrok-free.app/maestros/api/cerrar_sesion_maestro/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
