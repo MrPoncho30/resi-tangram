@@ -245,8 +245,8 @@ import Navbar from './navbar';
 import { FaArrowLeft } from 'react-icons/fa';
 
 // URLs de las APIs
-const API_GET_SALONES_URL = 'https://4367-2806-10b7-3-7dbd-48c6-c626-58a6-f949.ngrok-free.app/salones/api/listar_salon/';  
-const API_CREATE_SALON_URL = 'https://4367-2806-10b7-3-7dbd-48c6-c626-58a6-f949.ngrok-free.app/salones/api/crear_salones/';  
+const API_GET_SALONES_URL = 'https://0fa9-2806-10b7-3-7dbd-48c6-c626-58a6-f949.ngrok-free.app/salones/api/listar_salon/';  
+const API_CREATE_SALON_URL = 'https://0fa9-2806-10b7-3-7dbd-48c6-c626-58a6-f949.ngrok-free.app/salones/api/crear_salones/';  
 
 const Salones = () => {
   const navigate = useNavigate();
@@ -269,36 +269,32 @@ console.log("ID del maestro desde localStorage:", teacherId);
 
 
 const fetchSalones = async () => {
-  try {
-    const response = await fetch(API_GET_SALONES_URL);
-    console.log(response);
+  try { 
+    const accessToken = localStorage.getItem('accessToken'); // O donde lo estés guardando
+    console.log(accessToken)
+
+    const response = await fetch(API_GET_SALONES_URL, {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ${accessToken}',  // Aquí envías el token
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('HTTP error! Status: ${response.status}');
+    }
+
     const data = await response.json();
-    console.log(data);
-    
-    console.log('Datos obtenidos de la API de salones:', data);
-    
-    const teacherId = localStorage.getItem("maestro");
-  
-    const filteredSalones = data.filter(salon => salon.docente.toString() === teacherId);
-    
-    const mappedSalones = filteredSalones.map(salon => ({
-      id: salon.id,
-      grado: salon.grado,
-      grupo: salon.grupo,
-      ciclo_escolar_inicio: salon.ciclo_escolar_inicio,
-      ciclo_escolar_fin: salon.ciclo_escolar_fin
-    }));
-    
-    setSalones(mappedSalones);  
+    console.log('JSON data:', data);
+    setSalones(data)
+
   } catch (error) {
     console.error('Error al cargar los salones:', error);
   }
 };
 
-  
-
-  // Registrar un nuevo salón usando la API
-  const handleRegisterSalon = async () => {
+    const handleRegisterSalon = async () => {
     const teacherId = localStorage.getItem("maestro");
   
     if (!teacherId) {
@@ -514,3 +510,7 @@ const fetchSalones = async () => {
 };
 
 export default Salones;
+
+
+
+

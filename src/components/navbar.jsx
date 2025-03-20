@@ -10,24 +10,42 @@ const Navbar = () => {
         ?.split('=')[1];
 }
 
-  const handleLogout = async () => {
-    try {
-      await fetch('https://4367-2806-10b7-3-7dbd-48c6-c626-58a6-f949.ngrok-free.app/maestros/api/cerrar_sesion_maestro/', {
+const handleLogout = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+      console.warn('No hay token de autenticación. Redirigiendo a login.');
+      navigate('/loginTeacher');
+      return;
+    }
+
+    const response = await fetch(
+      'https://0fa9-2806-10b7-3-7dbd-48c6-c626-58a6-f949.ngrok-free.app/maestros/api/cerrar_sesion_maestro/', 
+      {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`,  // <-- Agregar el token aquí
           'X-CSRFToken': getCSRFToken(),
         },
-      });
+        credentials: 'include',  // <-- Si usas cookies de sesión
+      }
+    );
 
-      
-      localStorage.removeItem('authToken');
-
-      navigate('/loginTeacher');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
+    if (!response.ok) {
+      console.error('Error al cerrar sesión:', response.statusText);
+      return;
     }
-  };
+
+    // Eliminar token y redirigir
+    localStorage.removeItem('authToken');
+    navigate('/loginTeacher');
+  } catch (error) {
+    console.error('Error en la solicitud de logout:', error);
+  }
+};
+
 
   return (
     <div className="w-48 bg-gray-800 text-white p-4 min-h-screen">
