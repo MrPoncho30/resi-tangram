@@ -24,7 +24,7 @@ function LoginTeacher() {
     try {
       setLoading(true);
   
-      const response = await fetch('https://0fa9-2806-10b7-3-7dbd-48c6-c626-58a6-f949.ngrok-free.app/maestros/api/autentificar_maestro/', {
+      const response = await fetch('http://127.0.0.1:8000/maestros/api/autentificar_maestro/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
