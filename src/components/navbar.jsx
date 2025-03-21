@@ -21,7 +21,7 @@ const handleLogout = async () => {
     }
 
     const response = await fetch(
-      'https://0fa9-2806-10b7-3-7dbd-48c6-c626-58a6-f949.ngrok-free.app/maestros/api/cerrar_sesion_maestro/', 
+      'http://127.0.0.1:8000/maestros/api/cerrar_sesion_maestro/', 
       {
         method: 'POST',
         headers: {

@@ -17,23 +17,23 @@ const ActivitiesPanel = () => {
   const imagesPerPage = 4;
 
   const bancoTangrams = [
-    '/images/tangram1.png',
-    '/images/tangram2.png',
-    '/images/tangram3.png',
-    '/images/tangram4.png',
-    '/images/tangram5.png',
-    '/images/tangram6.png'
+    require('../assets/ALAN.png'),
+    require('../assets/casa_tangram.png'),
+    require('../assets/latuyacrack.png'),
+    require('../assets/logo_tan.png'),
+    require('../assets/ALAN.png'),
+    require('../assets/ALAN.png')
   ];
+  
 
-  // Función para obtener los salones
   useEffect(() => {
     const fetchSalones = async () => {
       try {
-        const accessToken = localStorage.getItem('accessToken'); // Recupera el token desde el localStorage
+        const accessToken = localStorage.getItem('accessToken');
 
         if (!accessToken) {
           console.error('No se encontró el token de acceso.');
-          return; // Si no hay token, no hacer la solicitud
+          return; 
         }
 
         const response = await fetch('http://127.0.0.1:8000/salones/api/listar_salon/', {
@@ -49,13 +49,13 @@ const ActivitiesPanel = () => {
         }
 
         const data = await response.json();
-        setSalones(data); // Actualiza el estado con los salones obtenidos
+        setSalones(data); 
       } catch (error) {
         console.error('Error al cargar los salones:', error);
       }
     };
 
-    fetchSalones(); // Llama a la función para obtener los salones
+    fetchSalones(); 
   }, []);
 
   const handleEliminar = (id) => {
@@ -67,16 +67,15 @@ const ActivitiesPanel = () => {
 
     // const tiempoFormato = `${String(newActivity.horas).padStart(2, '0')}:${String(newActivity.minutos).padStart(2, '0')}:${String(newActivity.segundos).padStart(2, '0')}`;
     
-  // Asegúrate de que las horas, minutos y segundos sean enteros positivos
   const horas = Math.max(0, Math.floor(newActivity.horas));
   const minutos = Math.max(0, Math.floor(newActivity.minutos));
   const segundos = Math.max(0, Math.floor(newActivity.segundos));
 
   console.log('Datos de la actividad a enviar:', {
     nombre: newActivity.nombre,
-    horas: horas,       // Hora como entero positivo
-    minutos: minutos,   // Minutos como entero positivo
-    segundos: segundos, // Segundos como entero positivo
+    horas: horas,      
+    minutos: minutos,   
+    segundos: segundos, 
     imagenes: newActivity.imagenes,
     // fecha: new Date().toISOString().split('T')[0], // Fecha en formato YYYY-MM-DD
     salones: [],
@@ -85,11 +84,11 @@ const ActivitiesPanel = () => {
 
   const nuevaActividad = {
     nombre: newActivity.nombre,
-    horas: horas,       // Enviar horas como entero
-    minutos: minutos,   // Enviar minutos como entero
-    segundos: segundos, // Enviar segundos como entero
-    banco_tangrams: newActivity.imagenes || [], // Se asume que newActivity.imagenes es un array
-    salon: (newActivity.salones && newActivity.salones.length > 0) ? newActivity.salones[0] : null, // Verifica si salones está definido y tiene elementos
+    horas: horas,       
+    minutos: minutos,   
+    segundos: segundos, 
+    banco_tangrams: newActivity.imagenes || [], 
+    salon: (newActivity.salones && newActivity.salones.length > 0) ? newActivity.salones[0] : null, 
     maestroId: teacherId,
   };
   
@@ -204,7 +203,7 @@ console.log('datos enviando si o si', (nuevaActividad))
         }
   
         const data = await response.json();
-        setActividades(data); // Guardamos las actividades en el estado
+        setActividades(data); 
       } catch (error) {
         console.error('Error al obtener actividades:', error);
       }

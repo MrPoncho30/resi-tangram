@@ -27,8 +27,6 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import CreateTeacherForm from './components/createTeacher';
 import Dashboard from './components/dashboard';
-// import AddStudent from './components/addStudent';  
-// import StudentPage from './components/studentPage'; 
 import LoginTeacher from './components/loginTeacher';
 import Salones from './components/salones';
 import ClassroomStudents from './components/classroom_students'
