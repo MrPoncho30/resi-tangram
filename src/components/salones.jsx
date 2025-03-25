@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
@@ -7,11 +6,16 @@ import { FaArrowLeft } from 'react-icons/fa';
 // URLs de las APIs
 const API_GET_SALONES_URL = 'http://127.0.0.1:8000/salones/api/listar_salon/';  
 const API_CREATE_SALON_URL = 'http://127.0.0.1:8000/salones/api/crear_salones/';  
+const API_DELETE_SALON_URL = 'http://127.0.0.1:8000/salones/api/eliminar_salon/salon_id/';  
+const API_EDIT_SALON_URL = 'http://127.0.0.1:8000/salones/api/editar_salon/salon_id/';  
 
 const Salones = () => {
   const navigate = useNavigate();
   const [salones, setSalones] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [selectedSalon, setSelectedSalon] = useState(null);
+  const [editModal, setEditModal] = useState(false);
+
   const [formData, setFormData] = useState({
     grado: '',
     grupo: '',
@@ -25,47 +29,126 @@ const Salones = () => {
   }, []);
 
   const teacherId = localStorage.getItem("maestro");
-console.log("ID del maestro desde localStorage:", teacherId);
+  console.log("ID del maestro desde localStorage:", teacherId);
 
+  const fetchSalones = async () => {
+    try { 
+      const accessToken = localStorage.getItem('accessToken'); 
+      const response = await fetch(API_GET_SALONES_URL, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-const fetchSalones = async () => {
-  try { 
-    const accessToken = localStorage.getItem('accessToken'); // O donde lo estés guardando
-    console.log(accessToken)
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
 
-    const response = await fetch(API_GET_SALONES_URL, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,  // Aquí envías el token
-        'Content-Type': 'application/json',
-      },
-    });
+      const data = await response.json();
+      setSalones(data)
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+    } catch (error) {
+      console.error('Error al cargar los salones:', error);
     }
+  };
 
-    const data = await response.json();
-    console.log('JSON data:', data);
-    setSalones(data)
-
-  } catch (error) {
-    console.error('Error al cargar los salones:', error);
-  }
-};
-
-
+  const handleEditSalon = async (salonId) => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      const salonToEdit = salones.find((salon) => salon.id === salonId);
   
+      if (!salonToEdit) {
+        console.error("No se encontró el salón con ID:", salonId);
+        return;
+      }
+  
+      // Primero, actualizamos el estado con los datos del salón
+      setSelectedSalon(salonToEdit);
+      setFormData({
+        grado: salonToEdit.grado,
+        grupo: salonToEdit.grupo,
+        ciclo_escolar_inicio: salonToEdit.ciclo_escolar_inicio,
+        ciclo_escolar_fin: salonToEdit.ciclo_escolar_fin,
+      });
+  
+      // Mostramos el modal antes de llamar a la API (esto depende de tu flujo)
+      setEditModal(true);
+  
+      // Hacemos la petición a la API (si es necesario)
+      const response = await fetch(
+        `${API_EDIT_SALON_URL.replace("salon_id", salonId)}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            grado: salonToEdit.grado,
+            grupo: salonToEdit.grupo,
+            ciclo_escolar_inicio: salonToEdit.ciclo_escolar_inicio,
+            ciclo_escolar_fin: salonToEdit.ciclo_escolar_fin,
+          }),
+        }
+      );
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error al actualizar el salón:", errorData);
+        return;
+      }
+  
+      console.log("Salón actualizado correctamente");
+    } catch (error) {
+      console.error("Error en handleEditSalon:", error);
+    }
+  };
+  
+  // Actualizar salón con los datos editados
+  const handleUpdateSalon = async () => {
+    if (!selectedSalon) return;
 
-  // Registrar un nuevo salón usando la API
+    const updatedSalon = {
+      grado: parseInt(formData.grado),
+      grupo: formData.grupo,
+      ciclo_escolar_inicio: selectedSalon.ciclo_escolar_inicio, 
+      ciclo_escolar_fin: selectedSalon.ciclo_escolar_fin, 
+    };
+
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      const response = await fetch(`${API_EDIT_SALON_URL.replace('salon_id', selectedSalon.id)}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedSalon),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al actualizar salón: ${response.statusText}`);
+      }
+
+      fetchSalones(); // Volver a cargar los salones
+      setEditModal(false);
+      setSelectedSalon(null); // Limpiar el salón seleccionado
+    } catch (error) {
+      console.error('Error al actualizar el salón:', error);
+    }
+  };
+
+  // Registrar un nuevo salón
   const handleRegisterSalon = async () => {
     const teacherId = localStorage.getItem("maestro");
-  
+
     if (!teacherId) {
       console.error("Error: No se encontró el ID del maestro en localStorage");
       return;
     }
-  
+
     const salonData = {
       grado: parseInt(formData.grado),
       grupo: formData.grupo,
@@ -73,27 +156,23 @@ const fetchSalones = async () => {
       ciclo_escolar_fin: parseInt(formData.ciclo_escolar_fin),
       docente: parseInt(teacherId),
     };
-  
+
     try {
       const accessToken = localStorage.getItem('accessToken'); 
       const response = await fetch(API_CREATE_SALON_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,  // Aquí envías el token
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(salonData),
       });
-  
-      // Agregar el console.log para ver la respuesta de la API
-      const responseData = await response.json();
-      console.log('Respuesta de la API crear:', responseData);
-  
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Error al registrar salón: ${errorText}`);
       }
-  
+
       fetchSalones();
       setShowModal(false);  // Cerrar modal
       setFormData({
@@ -106,20 +185,24 @@ const fetchSalones = async () => {
       console.error('Error registrando salón:', error);
     }
   };
-  
+
   // Eliminar salón
   const handleDeleteSalon = async (salonId) => {
     const confirmDelete = window.confirm('¿Estás seguro de que quieres eliminar este salón?');
     if (!confirmDelete) return;
 
     try {
-      const response = await fetch(`${API_GET_SALONES_URL}/${salonId}`, {
+      const accessToken = localStorage.getItem('accessToken');
+      const response = await fetch(`${API_DELETE_SALON_URL.replace('salon_id', salonId)}`, {
         method: 'DELETE',
+        headers:{
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        }
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error al eliminar salón: ${errorText}`);
+        throw new Error(`Error al eliminar salón: ${response.statusText}`);
       }
 
       fetchSalones();
@@ -127,6 +210,11 @@ const fetchSalones = async () => {
       console.error('Error eliminando salón:', error);
     }
   };
+
+  const handleCancel =() =>{
+    setShowModal(false);
+    setSelectedSalon(null);
+  }
 
   // Mostrar tabla de salones
   const renderTable = () => (
@@ -156,6 +244,11 @@ const fetchSalones = async () => {
                   Ver Alumnos
                 </button>
                 <button
+                  onClick={() => handleEditSalon(salon.id)}
+                  className="ml-2 py-1 px-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+                  Editar
+                </button>
+                <button
                   onClick={() => handleDeleteSalon(salon.id)}
                   className="ml-2 py-1 px-2 bg-red-500 text-white rounded-md hover:bg-red-600"
                 >
@@ -174,14 +267,12 @@ const fetchSalones = async () => {
       </tbody>
     </table>
   );
-  
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
       <Navbar />
       <div className="flex-1 p-6">
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Salones</h1>
-
         <button
           onClick={() => navigate(-1)}
           className="flex items-center text-gray-700 hover:text-gray-900 mb-4"
@@ -240,7 +331,6 @@ const fetchSalones = async () => {
                   value={formData.ciclo_escolar_inicio}
                   onChange={(e) => setFormData({ ...formData, ciclo_escolar_inicio: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-md"
-                  disabled
                 />
               </div>
               <div className="mb-4">
@@ -250,25 +340,72 @@ const fetchSalones = async () => {
                   value={formData.ciclo_escolar_fin}
                   onChange={(e) => setFormData({ ...formData, ciclo_escolar_fin: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-md"
-                  disabled
                 />
               </div>
-              <div className="flex justify-end">
+              <div className="text-center">
                 <button
                   type="button"
                   onClick={handleRegisterSalon}
-                  className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                 >
                   Registrar
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edición */}
+      {editModal && selectedSalon && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96">
+            <h2 className="text-xl font-bold mb-4">Editar Salón</h2>
+            <form>
+              <div className="mb-4">
+                <label className="block text-gray-700">Grado</label>
+                <select
+                  value={formData.grado}
+                  onChange={(e) => setFormData({ ...formData, grado: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Seleccione un grado</option>
+                  {[1, 2, 3, 4, 5, 6].map(grado => (
+                    <option key={grado} value={grado}>{grado}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700">Grupo</label>
+                <select
+                  value={formData.grupo}
+                  onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Seleccione un grupo</option>
+                  {['A', 'B', 'C', 'D'].map(grupo => (
+                    <option key={grupo} value={grupo}>{grupo}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-center gap-4">
+              <button
+                  type="button"
+                  onClick={handleUpdateSalon}
+                  className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                >
+                  Actualizar
+                </button>
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
-                  className="ml-2 py-2 px-4 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                  onClick={handleCancel}
+                  className="py-2 px-4 bg-gray-400 text-white rounded-md hover:bg-gray-500"
                 >
                   Cancelar
                 </button>
               </div>
+
             </form>
           </div>
         </div>

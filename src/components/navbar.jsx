@@ -55,7 +55,7 @@ const handleLogout = async () => {
           <Link to="/salones">Salones</Link>
         </li>
         <li className="mb-3 hover:bg-gray-700 p-2 rounded cursor-pointer">
-          <Link to="/actividades">Actividades</Link>
+          <Link to="/activitiesPanel">Actividades</Link>
         </li>
       
         {/* <li

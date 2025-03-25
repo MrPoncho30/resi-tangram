@@ -1,53 +1,42 @@
-// import React from 'react';
-// import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-// import { DndProvider } from "react-dnd";
-// import { HTML5Backend } from "react-dnd-html5-backend";
-
-// import WaitingRoom from './components/loginStudent'; // Pantalla inicio de estudiante
-// import WaitingScreen from './components/waitingScreen'; // Pantalla de espera
-// import ActivityScreen from './components/activityScreen'; // Pantalla de actividad espera
-// import TangramBoard from './components/tangramPuzzle'; // Pantalla tablero de tangram 
-
-// const App = () => (
-//   <DndProvider backend={HTML5Backend}>
-//     <Router>
-//       <Routes>
-//         <Route path="/" element={<WaitingRoom />} /> {/* Ruta de la pantalla de login */}
-//         <Route path="/waiting" element={<WaitingScreen />} /> {/* Ruta de la pantalla de espera */}
-//         <Route path="/activity" element={<ActivityScreen />} /> {/* Ruta de la pantalla con imagen y temp de inicio */}
-//         <Route path="/tangram" element={< TangramBoard/>}/> {/* Ruta del tablero tangram*/}
-//       </Routes>
-//     </Router>
-//   </DndProvider>
-// );
-
-// export default App;
-
-// import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { useState, useEffect } from "react";
+
 import CreateTeacherForm from './components/createTeacher';
 import Dashboard from './components/dashboard';
 import LoginTeacher from './components/loginTeacher';
 import Salones from './components/salones';
-import ClassroomStudents from './components/classroom_students'
+import ClassroomStudents from './components/classroom_students';
 import ActivitiesPanel from './components/activitiesPanel';
+
+// Componentes del ESTUDIANTE
+import Login from "./components/students/loginStudent"; // Login de estudiante
+import TeamSpace from "./components/students/teamSpace";
+
 function App() {
+  const [student, setStudent] = useState(null);
+
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LoginTeacher/>} />
+        <Route path="/" element={<LoginTeacher />} />
         <Route path="/createTeacher" element={<CreateTeacherForm />} />
-        <Route path="/loginTeacher" element={<LoginTeacher/>} />
-        <Route path="/salones" element={<Salones/>} />
-        <Route path="/dashboard" element={<Dashboard/>} />
+        <Route path="/loginTeacher" element={<LoginTeacher />} />
+        <Route path="/salones" element={<Salones />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/salon/:id/alumnos" element={<ClassroomStudents />} />
-        <Route path="/activitiesPanel" element={<ActivitiesPanel/>}/>
-        {/* <Route path="/addStudent" element={<AddStudent addStudent={setStudents} />} />
-        <Route path="/studentPage" element={<StudentPage students={students} />} /> */}
+        <Route path="/activitiesPanel" element={<ActivitiesPanel />} />
+
+        {/* Ruta para el login del estudiante */}
+        <Route 
+          path="/components/students/loginStudent" 
+          element={
+            student ? <TeamSpace nickname={student.nickname} teamCode={student.teamCode} /> 
+                    : <Login onJoin={(nickname, teamCode) => setStudent({ nickname, teamCode })} />
+          } 
+        />
       </Routes>
     </Router>
   );
 }
-
 
 export default App;

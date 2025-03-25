@@ -17,12 +17,12 @@ const ActivitiesPanel = () => {
   const imagesPerPage = 4;
 
   const bancoTangrams = [
-    require('../assets/ALAN.png'),
     require('../assets/casa_tangram.png'),
-    require('../assets/latuyacrack.png'),
+    require('../assets/casa_tangram.png'),
+    require('../assets/casa_tangram.png'),
     require('../assets/logo_tan.png'),
-    require('../assets/ALAN.png'),
-    require('../assets/ALAN.png')
+    require('../assets/logo_tan.png'),
+    require('../assets/logo_tan.png')
   ];
   
 
@@ -133,6 +133,39 @@ console.log('datos enviando si o si', (nuevaActividad))
       console.error('Error al crear la actividad:', error);
     }
   };
+
+  const handleEliminarActividad = async (id) => {
+    const confirmDelete = window.confirm('¿Estás seguro de que quieres eliminar esta actividad?');
+    if (!confirmDelete) return;
+  
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      
+      if (!accessToken) {
+        console.error('No se encontró el token de acceso.');
+        return;
+      }
+  
+      // Aquí agregamos la URL de la API y reemplazamos 'actividad_id' con el id real de la actividad
+      const response = await fetch(`http://127.0.0.1:8000/actividades/api/eliminar_actividad/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Error al eliminar actividad: ${response.statusText}`);
+      }
+  
+      // Actualizamos el estado de actividades después de eliminar la actividad
+      setActividades(actividades.filter(actividad => actividad.id !== id));
+    } catch (error) {
+      console.error('Error al eliminar la actividad:', error);
+    }
+  };
+  
 
   const handleImageSelect = (imagen) => {
     setNewActivity(prev => ({
@@ -283,7 +316,7 @@ console.log('datos enviando si o si', (nuevaActividad))
           <td className="border p-2">
             <button onClick={() => console.log('Ver actividad', actividad)} className="bg-blue-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-blue-700">Ver</button>
             <button onClick={() => console.log('Editar actividad', actividad)} className="bg-yellow-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-yellow-700">Editar</button>
-            <button onClick={() => handleEliminar(actividad.id)} className="bg-red-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-red-700">Eliminar</button>
+            <button onClick={() => handleEliminarActividad(actividad.id)} className="bg-red-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-red-700">Eliminar</button>
             <button onClick={() => handleAssignToClass(actividad.id)} className="bg-green-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-green-700">Asignar a</button>
           </td>
         </tr>
