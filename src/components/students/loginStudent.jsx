@@ -186,7 +186,7 @@ function LoginStudent({ onJoin }) {
   return (
     <div className="flex h-screen items-center justify-center bg-gradient-to-br from-blue-200 to-indigo-300">
       <div className="bg-white p-6 rounded-2xl shadow-xl w-96 text-center">
-        <h2 className="text-2xl font-bold text-gray-700 mb-4">Unirse a un equipo</h2>
+        <h2 className="text-2xl font-bold text-gray-700 mb-4">Ingresa con tu equipo Tangram</h2>
         {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

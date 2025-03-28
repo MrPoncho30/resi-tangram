@@ -12,6 +12,11 @@ import ActivitiesPanel from './components/activitiesPanel';
 import Login from "./components/students/loginStudent"; // Login de estudiante
 import TeamSpace from "./components/students/teamSpace";
 
+//Componentes del JUEGO 
+import TangramGame  from './components/game/tangramPuzzle';
+import Board from "./components/game/board";
+
+
 function App() {
   const [student, setStudent] = useState(null);
 
@@ -34,6 +39,10 @@ function App() {
                     : <Login onJoin={(nickname, teamCode) => setStudent({ nickname, teamCode })} />
           } 
         />
+        
+        {/* Ruta para la pantalla de juego tangram */}
+        <Route path="/components/game/tangramPuzzle" element={<TangramGame />} />
+        <Route path="components/game/board" element={<Board />} /> 
       </Routes>
     </Router>
   );

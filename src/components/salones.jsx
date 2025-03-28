@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
 import { FaArrowLeft } from 'react-icons/fa';
+import Swal from 'sweetalert2';
+
 
 // URLs de las APIs
 const API_GET_SALONES_URL = 'http://127.0.0.1:8000/salones/api/listar_salon/';  
@@ -186,30 +188,51 @@ const Salones = () => {
     }
   };
 
-  // Eliminar salón
   const handleDeleteSalon = async (salonId) => {
-    const confirmDelete = window.confirm('¿Estás seguro de que quieres eliminar este salón?');
-    if (!confirmDelete) return;
-
+    const result = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "¡No podrás revertir esto!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar"
+    });
+  
+    if (!result.isConfirmed) return;
+  
     try {
       const accessToken = localStorage.getItem('accessToken');
       const response = await fetch(`${API_DELETE_SALON_URL.replace('salon_id', salonId)}`, {
         method: 'DELETE',
-        headers:{
+        headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         }
       });
-
+  
       if (!response.ok) {
         throw new Error(`Error al eliminar salón: ${response.statusText}`);
       }
-
+  
+      Swal.fire({
+        title: "¡Eliminado!",
+        text: "El salón ha sido eliminado.",
+        icon: "success"
+      });
+  
       fetchSalones();
     } catch (error) {
       console.error('Error eliminando salón:', error);
+      Swal.fire({
+        title: "Error",
+        text: "Hubo un problema al eliminar el salón.",
+        icon: "error"
+      });
     }
   };
+  
 
   const handleCancel =() =>{
     setShowModal(false);

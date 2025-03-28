@@ -461,53 +461,55 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
           </div>
         </div>
 
-        {/* Nuevo contenedor para la lista de equipos */}
-        <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-          <h2 className="text-lg font-semibold mb-2">Lista de Equipos</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full bg-white rounded-lg shadow-md">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 text-left">Nombre del Equipo</th>
-                  <th className="px-4 py-2 text-left">Integrantes</th>
-                  <th className="px-4 py-2 text-left">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {equipos.length === 0 ? (
-                  <tr>
-                    <td colSpan="3" className="text-center py-4 text-gray-500">
-                      No hay equipos registrados
-                    </td>
-                  </tr>
-                ) : (
-                  equipos.map((equipo) => (
-                    <tr key={equipo.id}>
-                      <td className="px-4 py-2">{equipo.nombre}</td>
-                      <td className="px-4 py-2">{equipo.integrantes?.length || 0}</td>
-                      <td className="px-4 py-2">
-                        <button className="bg-blue-500 text-white px-3 py-1 rounded mr-2">Ver equipo</button>
-                        <button
-                          onClick={() => handleAsignarAlumnosClick(equipo.id)} // Establecemos el equipoId seleccionado
-                          className="py-1 px-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          Asignar Alumnos
-                        </button>
-                        <button className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">Editar</button>
-                        <button 
-                          onClick={() => handleDeleteEquipo(equipo.id)} 
-                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                        >
-                          Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+       {/* Nuevo contenedor para la lista de equipos */}
+<div className="bg-white p-4 rounded-lg shadow-md mb-6">
+  <h2 className="text-lg font-semibold mb-2">Lista de Equipos</h2>
+  <div className="overflow-x-auto">
+    <table className="w-full bg-white rounded-lg shadow-md">
+      <thead>
+        <tr>
+          <th className="px-4 py-2 text-left">Nombre del Equipo</th>
+          <th className="px-4 py-2 text-left">Integrantes</th>
+          <th className="px-4 py-2 text-left">Llave de Equipo</th>
+          <th className="px-4 py-2 text-left">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {equipos.length === 0 ? (
+          <tr>
+            <td colSpan="4" className="text-center py-4 text-gray-500">
+              No hay equipos registrados
+            </td>
+          </tr>
+        ) : (
+          equipos.map((equipo) => (
+            <tr key={equipo.id}>
+              <td className="px-4 py-2">{equipo.nombre}</td>
+              <td className="px-4 py-2">{equipo.integrantes?.length || 0}</td>
+              <td className="px-4 py-2">{equipo.llave || "N/A"}</td>
+              <td className="px-4 py-2">
+                <button className="bg-blue-500 text-white px-3 py-1 rounded mr-2">Ver equipo</button>
+                <button
+                  onClick={() => handleAsignarAlumnosClick(equipo.id)}
+                  className="py-1 px-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                >
+                  Asignar Alumnos
+                </button>
+                <button className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">Editar</button>
+                <button 
+                  onClick={() => handleDeleteEquipo(equipo.id)} 
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
 
 
         {/* Modal para registrar o editar alumnos */}
