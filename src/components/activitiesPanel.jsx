@@ -30,12 +30,12 @@ const ActivitiesPanel = () => {
     const fetchSalones = async () => {
       try {
         const accessToken = localStorage.getItem('accessToken');
-
+  
         if (!accessToken) {
           console.error('No se encontró el token de acceso.');
           return; 
         }
-
+  
         const response = await fetch('http://127.0.0.1:8000/salones/api/listar_salon/', {
           method: 'GET',
           headers: {
@@ -43,20 +43,27 @@ const ActivitiesPanel = () => {
             'Content-Type': 'application/json',
           },
         });
-
+  
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-
+  
         const data = await response.json();
-        setSalones(data); 
+        console.log('Salones recibidos:', data);  // Asegúrate de que los datos están llegando aquí
+        
+        if (data && Array.isArray(data)) {
+          setSalones(data);
+        } else {
+          console.error('Los datos no están en el formato esperado:', data);
+        }
       } catch (error) {
         console.error('Error al cargar los salones:', error);
       }
     };
-
-    fetchSalones(); 
+  
+    fetchSalones();
   }, []);
+  
 
   const handleEliminar = (id) => {
     setActividades(actividades.filter(actividad => actividad.id !== id));
@@ -146,7 +153,6 @@ console.log('datos enviando si o si', (nuevaActividad))
         return;
       }
   
-      // Aquí agregamos la URL de la API y reemplazamos 'actividad_id' con el id real de la actividad
       const response = await fetch(`http://127.0.0.1:8000/actividades/api/eliminar_actividad/${id}/`, {
         method: 'DELETE',
         headers: {
@@ -190,15 +196,47 @@ console.log('datos enviando si o si', (nuevaActividad))
     );
   };
   
-  const handleAssignActivityToClass = () => {
-    const updatedActivities = actividades.map(actividad =>
-      actividad.id === selectedActivityId
-        ? { ...actividad, salones: [...actividad.salones, ...selectedSalones] }
-        : actividad
-    );
-    setActividades(updatedActivities);
-    setShowAssignModal(false);
+  const handleAssignActivityToClass = async () => {
+    const actividadId = actividades.find(actividad => actividad.id === selectedActivityId)?.id;
+    // Aquí, `selectedActivityId` es el ID de la actividad seleccionada. Puedes obtenerlo de un estado o de una selección.
+  
+    if (!actividadId) {
+      console.error('No se encontró la actividad con el ID proporcionado');
+      return;
+    }
+  
+    const salonId = selectedSalones[0];  // Obtener el ID del salón seleccionado
+  
+    try {
+      // Haciendo la llamada POST a la API
+      const response = await fetch('http://127.0.0.1:8000/actividades/api/asignar_salon_actividad/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`, // Agrega el token de acceso si es necesario
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          actividad_id: actividadId,  // Enviar el ID de la actividad
+          salon_id: salonId          // Enviar el ID del salón
+        })
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        console.log('Respuesta:', data.success);
+        // Aquí puedes manejar la respuesta, por ejemplo, mostrar un mensaje de éxito
+        setShowAssignModal(false)
+      } else {
+        console.error('Error:', data.error);
+        // Maneja el error si la respuesta no es OK
+      }
+    } catch (error) {
+      console.error('Error al asignar actividad:', error);
+    }
   };
+  
+  
 
   const goToNextPage = () => {
     if (currentIndex + imagesPerPage < bancoTangrams.length) {
@@ -300,62 +338,71 @@ console.log('datos enviando si o si', (nuevaActividad))
                 <tr className="bg-gray-200">
                   <th className="border p-2">Nombre</th>
                   <th className="border p-2">Tiempo</th>
-                  {/* <th className="border p-2">Fecha de Creación</th> */}
+                  <th className="border p-2">Salón</th> 
                   <th className="border p-2">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-      {actividades.map((actividad) => (
-        
-        <tr key={actividad.id} className="text-center">
-          <td className="border p-2">{actividad.nombre}</td>
-          <td className="border p-2">
-      {`${String(actividad.horas).padStart(2, '0')}:${String(actividad.minutos).padStart(2, '0')}:${String(actividad.segundos).padStart(2, '0')}`}
-    </td>
-          {/* <td className="border p-2">{actividad.fecha_creacion || 'Sin fecha'}</td> */}
-          <td className="border p-2">
-            <button onClick={() => console.log('Ver actividad', actividad)} className="bg-blue-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-blue-700">Ver</button>
-            <button onClick={() => console.log('Editar actividad', actividad)} className="bg-yellow-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-yellow-700">Editar</button>
-            <button onClick={() => handleEliminarActividad(actividad.id)} className="bg-red-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-red-700">Eliminar</button>
-            <button onClick={() => handleAssignToClass(actividad.id)} className="bg-green-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-green-700">Asignar a</button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
+                {actividades.map((actividad) => (
+                  <tr key={actividad.id} className="text-center">
+                    <td className="border p-2">{actividad.nombre}</td>
+                    <td className="border p-2">
+                      {`${String(actividad.horas).padStart(2, '0')}:${String(actividad.minutos).padStart(2, '0')}:${String(actividad.segundos).padStart(2, '0')}`}
+                    </td>
+                      <td className="border p-2">
+                        {actividad.salon 
+                          ? `${actividad.salon.grado} - ${actividad.salon.grupo} (${actividad.salon.ciclo_escolar_inicio} - ${actividad.salon.ciclo_escolar_fin})`
+                          : 'No asignado'}
+                      </td>                    <td className="border p-2">
+                      <button onClick={() => console.log('Ver actividad', actividad)} className="bg-blue-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-blue-700">Ver</button>
+                      <button onClick={() => console.log('Editar actividad', actividad)} className="bg-yellow-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-yellow-700">Editar</button>
+                      <button onClick={() => handleEliminarActividad(actividad.id)} className="bg-red-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-red-700">Eliminar</button>
+                      <button onClick={() => handleAssignToClass(actividad.id)} className="bg-green-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-green-700">Asignar a</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-        </table>
 
        {/* Modal Asignar a */}
-        {showAssignModal && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
-              <h3 className="text-xl mb-4">Asignar Actividad</h3>
-              <div>
-                <h4 className="mb-2">Selecciona un salón:</h4>
-                <select 
-                  value={selectedSalones[0] || ''} 
-                  onChange={(e) => setSelectedSalones([e.target.value])} 
-                  className="border p-2 w-full rounded-md"
-                >
-                  <option value="" disabled>Selecciona un salón</option>
-                  {salones.length > 0 ? (
-                    salones.map(salon => (
-                      <option key={salon.id} value={salon.id}>
-                        {salon.nombre}
-                      </option>
-                    ))
-                  ) : (
-                    <option disabled>No hay salones disponibles</option>
-                  )}
-                </select>
-              </div>
-              <div className="mt-4">
-                <button onClick={() => setShowAssignModal(false)} className="bg-gray-500 text-white py-2 px-4 rounded-md">Cancelar</button>
-                <button onClick={handleAssignActivityToClass} className="bg-blue-500 text-white py-2 px-4 rounded-md">Asignar</button>
-              </div>
+       {showAssignModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
+            <h3 className="text-xl mb-4">Asignar Actividad</h3>
+            <div>
+              <h4 className="mb-2">Selecciona un salón:</h4>
+              <select 
+                value={selectedSalones[0] || ''} 
+                onChange={(e) => setSelectedSalones([e.target.value])} 
+                className="border p-2 w-full rounded-md"
+              >
+                <option value="" disabled>Selecciona un salón</option>
+                {salones.length > 0 ? (
+                  salones.map(salon => (
+                    <option key={salon.id} value={salon.id}>
+                      {`${salon.grado}-${salon.grupo}`}  {/* Aquí es donde combinamos grado y grupo */}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No hay salones disponibles</option>
+                )}
+              </select>
+
+            </div>
+            <div className="mt-4">
+              <button onClick={() => setShowAssignModal(false)} className="bg-gray-500 text-white py-2 px-4 rounded-md">Cancelar</button>
+              <button 
+                onClick={handleAssignActivityToClass} 
+                className="bg-blue-500 text-white py-2 px-4 rounded-md"
+              >
+                Asignar
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
+
 
       </div>
     </div>

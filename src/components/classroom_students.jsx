@@ -98,12 +98,39 @@ const ClassroomStudents = () => {
       if (!Array.isArray(data)) {
         throw new Error('La respuesta de la API no es un array válido.');
       }
-  
-      setEquipos(data); // Guardamos los equipos obtenidos
-    } catch (error) {
-      console.error('Error al cargar los equipos:', error.message);
-    }
-  };
+      
+    // Llamamos a la API de códigos para cada equipo y agregamos la información
+    const equiposConCodigos = await Promise.all(data.map(async (equipo) => {
+      // Llamada para obtener el código de cada equipo
+      const codigoResponse = await fetch(`http://127.0.0.1:8000/equipos/api/obtener_codigos/${equipo.id}/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      let codigo = "N/A";  // Valor por defecto si no se encuentra el código
+
+      if (codigoResponse.ok) {
+        const codigoData = await codigoResponse.json();
+        console.log("Respuesta de la API de códigos: ", codigoData);  // Depuramos la respuesta
+
+        if (Array.isArray(codigoData) && codigoData.length > 0) {
+          codigo = codigoData[0].codigo;  // Tomamos el primer código
+        }
+      } else {
+        console.error(`Error al obtener código para el equipo ${equipo.id}`);
+      }
+
+      return { ...equipo, codigo };  // Agregamos el código al objeto del equipo
+    }));
+
+    setEquipos(equiposConCodigos);  // Guardamos los equipos con los códigos obtenidos
+  } catch (error) {
+    console.error('Error al cargar los equipos:', error.message);
+  }
+};
   
   // Obtener alumnos y equipos cuando el componente se monta o el id cambia
   useEffect(() => {
@@ -486,7 +513,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
             <tr key={equipo.id}>
               <td className="px-4 py-2">{equipo.nombre}</td>
               <td className="px-4 py-2">{equipo.integrantes?.length || 0}</td>
-              <td className="px-4 py-2">{equipo.llave || "N/A"}</td>
+              <td className="px-4 py-2">{equipo.codigo || "N/A"}</td> 
               <td className="px-4 py-2">
                 <button className="bg-blue-500 text-white px-3 py-1 rounded mr-2">Ver equipo</button>
                 <button

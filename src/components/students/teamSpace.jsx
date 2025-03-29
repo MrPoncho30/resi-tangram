@@ -9,7 +9,7 @@ function TeamSpace({ nickname, teamCode }) {
       <p className="text-lg text-gray-600 mt-2">Estás en el equipo: <strong>{teamCode}</strong></p>
       <button 
         className="mt-6 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-        onClick={() => navigate("/components/students/loginStudent")}
+        onClick={() => navigate("./components/students/loginStudent")}
       >
         Salir
       </button>
