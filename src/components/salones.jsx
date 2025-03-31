@@ -240,10 +240,11 @@ const Salones = () => {
   }
 
   // Mostrar tabla de salones
+  // Mostrar tabla de salones
   const renderTable = () => (
-    <table className="w-full bg-white rounded-lg shadow-md">
+    <table className="w-full bg-white rounded-lg shadow-md overflow-hidden">
       <thead>
-        <tr>
+        <tr className="bg-gray-200 text-gray-700">
           <th className="px-4 py-2 text-left">Grado</th>
           <th className="px-4 py-2 text-left">Grupo</th>
           <th className="px-4 py-2 text-left">Ciclo Escolar</th>
@@ -253,27 +254,26 @@ const Salones = () => {
       <tbody>
         {salones.length > 0 ? (
           salones.map((salon) => (
-            <tr key={salon.id}>
+            <tr key={salon.id} className="border-b hover:bg-gray-100">
               <td className="px-4 py-2">{salon.grado}</td>
               <td className="px-4 py-2">{salon.grupo}</td>
-              <td className="px-4 py-2">
-                {salon.ciclo_escolar_inicio} - {salon.ciclo_escolar_fin}
-              </td>
+              <td className="px-4 py-2">{salon.ciclo_escolar_inicio} - {salon.ciclo_escolar_fin}</td>
               <td className="px-4 py-2 text-center">
                 <button
                   onClick={() => navigate(`/salon/${salon.id}/alumnos`)}
-                  className="py-1 px-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                  className="py-1 px-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 mr-2"
                 >
                   Ver Alumnos
                 </button>
                 <button
                   onClick={() => handleEditSalon(salon.id)}
-                  className="ml-2 py-1 px-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+                  className="py-1 px-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 mr-2"
+                >
                   Editar
                 </button>
                 <button
                   onClick={() => handleDeleteSalon(salon.id)}
-                  className="ml-2 py-1 px-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                  className="py-1 px-2 bg-red-500 text-white rounded-md hover:bg-red-600"
                 >
                   Eliminar
                 </button>
@@ -295,37 +295,92 @@ const Salones = () => {
     <div className="min-h-screen bg-gray-100 flex">
       <Navbar />
       <div className="flex-1 p-6">
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Salones</h1>
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center text-gray-700 hover:text-gray-900 mb-4"
-        >
-          <FaArrowLeft className="mr-2" /> Volver
-        </button>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Salones</h1>
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center text-gray-700 hover:text-gray-900"
+          >
+            <FaArrowLeft className="mr-2" /> Volver
+          </button>
+        </div>
 
         <button
           onClick={() => setShowModal(true)}
-          className="mb-6 py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          className="mb-6 py-2 px-4 bg-green-500 text-white rounded-md hover:bg-green-600"
         >
           Registrar Salón
         </button>
 
-        <div className="overflow-x-auto">
-          {renderTable()}
-        </div>
+        <div className="overflow-x-auto">{renderTable()}</div>
       </div>
+
+      {editModal && selectedSalon && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-white p-6 rounded-lg w-96">
+      <h2 className="text-xl font-bold mb-4">Editar Salón</h2>
+      <form>
+        <div className="mb-4">
+          <label className="block text-gray-700">Grado</label>
+          <select
+            value={formData.grado}
+            onChange={(e) => setFormData({ ...formData, grado: e.target.value })}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          >
+            <option value="">Seleccione un grado</option>
+            {[1, 2, 3, 4, 5, 6].map(grado => (
+              <option key={grado} value={grado}>{grado}</option>
+            ))}
+          </select>
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">Grupo</label>
+          <select
+            value={formData.grupo}
+            onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          >
+            <option value="">Seleccione un grupo</option>
+            {['A', 'B', 'C', 'D'].map(grupo => (
+              <option key={grupo} value={grupo}>{grupo}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex justify-center gap-4">
+        <button
+            type="button"
+            onClick={handleUpdateSalon}
+            className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Actualizar
+          </button>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="py-2 px-4 bg-gray-400 text-white rounded-md hover:bg-gray-500"
+          >
+            Cancelar
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+)}
+
 
       {/* Modal de Registro */}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg w-96">
+          <div className="bg-white p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Registrar Salón</h2>
             <form>
               <div className="mb-4">
                 <label className="block text-gray-700">Grado</label>
                 <select
                   value={formData.grado}
-                  onChange={(e) => setFormData({ ...formData, grado: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, grado: e.target.value }))}
                   className="w-full p-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Seleccione un grado</option>
@@ -338,7 +393,7 @@ const Salones = () => {
                 <label className="block text-gray-700">Grupo</label>
                 <select
                   value={formData.grupo}
-                  onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, grupo: e.target.value }))}
                   className="w-full p-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Seleccione un grupo</option>
@@ -352,8 +407,9 @@ const Salones = () => {
                 <input
                   type="number"
                   value={formData.ciclo_escolar_inicio}
-                  onChange={(e) => setFormData({ ...formData, ciclo_escolar_inicio: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, ciclo_escolar_inicio: e.target.value }))}
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  onKeyDown={(e) => e.key === 'e' && e.preventDefault()}
                 />
               </div>
               <div className="mb-4">
@@ -361,74 +417,27 @@ const Salones = () => {
                 <input
                   type="number"
                   value={formData.ciclo_escolar_fin}
-                  onChange={(e) => setFormData({ ...formData, ciclo_escolar_fin: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, ciclo_escolar_fin: e.target.value }))}
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  onKeyDown={(e) => e.key === 'e' && e.preventDefault()}
                 />
               </div>
-              <div className="text-center">
+              <div className="flex justify-center gap-4">
                 <button
                   type="button"
                   onClick={handleRegisterSalon}
-                  className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                 >
                   Registrar
                 </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Edición */}
-      {editModal && selectedSalon && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4">Editar Salón</h2>
-            <form>
-              <div className="mb-4">
-                <label className="block text-gray-700">Grado</label>
-                <select
-                  value={formData.grado}
-                  onChange={(e) => setFormData({ ...formData, grado: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                >
-                  <option value="">Seleccione un grado</option>
-                  {[1, 2, 3, 4, 5, 6].map(grado => (
-                    <option key={grado} value={grado}>{grado}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700">Grupo</label>
-                <select
-                  value={formData.grupo}
-                  onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                >
-                  <option value="">Seleccione un grupo</option>
-                  {['A', 'B', 'C', 'D'].map(grupo => (
-                    <option key={grupo} value={grupo}>{grupo}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-center gap-4">
-              <button
-                  type="button"
-                  onClick={handleUpdateSalon}
-                  className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                >
-                  Actualizar
-                </button>
                 <button
                   type="button"
-                  onClick={handleCancel}
+                  onClick={() => setShowModal(false)}
                   className="py-2 px-4 bg-gray-400 text-white rounded-md hover:bg-gray-500"
                 >
                   Cancelar
                 </button>
               </div>
-
             </form>
           </div>
         </div>
@@ -436,5 +445,6 @@ const Salones = () => {
     </div>
   );
 };
+
 
 export default Salones;
