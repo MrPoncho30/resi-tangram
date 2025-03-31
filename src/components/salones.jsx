@@ -240,7 +240,6 @@ const Salones = () => {
   }
 
   // Mostrar tabla de salones
-  // Mostrar tabla de salones
   const renderTable = () => (
     <table className="w-full bg-white rounded-lg shadow-md overflow-hidden">
       <thead>
