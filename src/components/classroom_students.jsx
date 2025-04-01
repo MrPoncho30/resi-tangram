@@ -36,6 +36,7 @@ const ClassroomStudents = () => {
   const [selectedAlumnos, setSelectedAlumnos] = useState([]);
   const [selectedEquipoId, setSelectedEquipoId] = useState(null);
   
+  
 
 
   // Función para obtener los alumnos desde la API
@@ -132,12 +133,40 @@ const ClassroomStudents = () => {
   }
 };
   
+const fetchEquiposConEstado = async () => {
+  try {
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      console.error("No hay token");
+      return;
+    }
+
+    const response = await fetch("http://127.0.0.1:8000/equipos/api/lista_con_sesion/", {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
+    }
+
+    const data = await response.json();
+    setEquipos(data || []); 
+  } catch (error) {
+    console.error("Error al cargar equipos con estado:", error.message);
+  }
+};
+
   // Obtener alumnos y equipos cuando el componente se monta o el id cambia
   useEffect(() => {
     fetchAlumnos();  // Llamamos a la función para obtener los alumnos
     fetchEquipos();  // Llamamos a la función para obtener los equipos
+    fetchEquiposConEstado(); //LLamamos a la funcion para obtener estado de los eequipos
   }, [id]);
 
+  
   // Registrar alumno en la API
   const handleRegisterAlumno = async () => {
     try {
@@ -360,6 +389,48 @@ const handleDeleteEquipo = async (equipoId) => {
   }
 };
 
+const handleToggleEstado = async (equipoId) => {
+  try {
+
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      console.error('No hay token');
+      return;
+    }
+    // Encontrar el equipo actual en la lista
+    const equipoActual = equipos.find(equipo => equipo.id === equipoId);
+    if (!equipoActual) return;
+
+    // Alternar el estado
+    const nuevoEstado = !equipoActual.activa;
+
+    // Hacer la solicitud PATCH con fetch
+    const response = await fetch(`http://127.0.0.1:8000/equipos/api/actualizar_estado_sesion/${equipoId}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}`,
+
+      },
+      body: JSON.stringify({ activa: nuevoEstado })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
+    }
+
+    // Actualizar el estado localmente para reflejar el cambio
+    setEquipos(prevEquipos =>
+      prevEquipos.map(equipo =>
+        equipo.id === equipoId ? { ...equipo, activa: nuevoEstado } : equipo
+      )
+    );
+
+    console.log('Estado de la sesión actualizado correctamente');
+  } catch (error) {
+    console.error('Error al actualizar el estado de la sesión:', error.message);
+  }
+};
+
 
 const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handleAsignar, equipos }) => {
   // Filtrar los alumnos que ya tienen un equipo asignado
@@ -520,8 +591,8 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                           <input
                             type="checkbox"
                             className="sr-only peer"
-                            checked={equipo.estado}
-                            // onChange={() => handleToggleEstado(equipo.id)}
+                            checked={equipo.activa}
+                            onChange={() => handleToggleEstado(equipo.id)}
                           />
                           <div className="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 
                             dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full 
