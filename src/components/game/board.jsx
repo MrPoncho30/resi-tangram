@@ -28,6 +28,10 @@ const Board = () => {
   const [rotation, setRotation] = useState({});
   const [draggingPiece, setDraggingPiece] = useState(null);
   const [bloqueadas, setBloqueadas] = useState({});
+  const [movingBy, setMovingBy] = useState(null);
+  const [piecesBeingMoved, setPiecesBeingMoved] = useState({}); // { piezaId: nombre }
+  const [jugadoresListos, setJugadoresListos] = useState([]);
+
   const boardRef = useRef();
   const socket = useRef(null);
 
@@ -37,45 +41,50 @@ const Board = () => {
   const teamName = localStorage.getItem("teamName");
 
   useEffect(() => {
-    // Retardo pequeño para asegurar que teamId ya esté cargado
     const timeout = setTimeout(() => {
       socket.current = new WebSocket(`ws://127.0.0.1:8000/ws/sesiones/ZH8WRW/`);
-
+  
       socket.current.onopen = () => {
         console.log("✅ Conectado al WebSocket del equipo:", teamId);
       };
-
+  
       socket.current.onmessage = (e) => {
         const data = JSON.parse(e.data);
+  
         if (data.tipo === "actualizar_tangram") {
           const nuevasPiezas = data.estado.pieces;
           setBoardPieces(nuevasPiezas);
           setRotation(data.estado.rotation);
-      
-          // 🧠 Nuevo: eliminar del contenedor las piezas que ya están en el tablero
+  
           const idsEnTablero = nuevasPiezas.map((p) => p.id);
           setPiecesState((prev) => prev.filter((p) => !idsEnTablero.includes(p.id)));
-        } else if (data.tipo === "pieza_bloqueada") {
+        }
+  
+        else if (data.tipo === "pieza_bloqueada") {
           setBloqueadas((prev) => ({
             ...prev,
             [data.pieza_id]: data.usuario,
           }));
-        } else if (data.tipo === "pieza_liberada") {
+          setMovingBy(data.usuario); // 👈 Mostrar quién está moviendo
+        }
+  
+        else if (data.tipo === "pieza_liberada") {
           setBloqueadas((prev) => {
             const nuevo = { ...prev };
             delete nuevo[data.pieza_id];
             return nuevo;
           });
+          setMovingBy(null); // 👈 Limpiar mensaje al soltar
         }
       };
-      
-    }, 100); // medio milisegundo no existe, usamos 100ms
-
+    }, 100);
+  
     return () => {
       clearTimeout(timeout);
       if (socket.current) socket.current.close();
     };
   }, [teamId]);
+  
 
   const handleReady = () => setIsPlaying(true);
 
@@ -83,6 +92,8 @@ const Board = () => {
     if (!isPlaying) return;
     e.dataTransfer.setData("id", id.toString());
     setDraggingPiece(id);
+
+    setMovingBy(nickname); //ESTO DEBE MOSTRAR A TU PUTA MADRE QUE LA ESTA MOVIENDO
 
     socket.current?.send(
       JSON.stringify({
@@ -135,6 +146,7 @@ const Board = () => {
     );
 
     setDraggingPiece(null);
+    setMovingBy(null);
   };
 
   const handleDrop = (e) => {
@@ -193,6 +205,16 @@ const Board = () => {
     );
   };
 
+  const handlePlayerReady = () => {
+    socket.current?.send(
+      JSON.stringify({
+        tipo: "jugador_listo",
+        nombre: nickname,
+      })
+    );
+  };
+  
+
   console.log("Estas jugando como:", { studentName }, { nickname }, "Equipo: ID:", {
     teamId,
   }, "Nombre Eq: ", { teamName });
@@ -235,9 +257,16 @@ const Board = () => {
         onDragEnd={handleDragEnd}
       >
         {isPlaying ? (
+          <>
           <h1 className="text-2xl font-bold text-center mb-4 text-purple-700 font-comic animate-bounce">
             ¡A Jugar!
           </h1>
+          {/* {movingBy && (
+            <div className="absolute top-0 left-0 w-full text-center text-lg font-bold text-blue-700">
+              <p>{movingBy} ESTA MOVIENDO A TU PUTA MADRE DE PIEZA</p>
+            </div>
+          )} */}
+          </>
         ) : (
           <div className="flex flex-col items-center text-center">
             <h2 className="text-xl font-bold text-blue-800 mb-2 font-comic">
@@ -258,30 +287,39 @@ const Board = () => {
         )}
 
         {/* Renderizar piezas en el tablero */}
-        {boardPieces.map((piece) => (
-          <div
-            key={`pieza-tablero-${piece.id}`}
-            draggable={isPlaying}
-            onDragStart={(e) => handleDragStart(e, piece.id)}
-            onDragEnd={handleDragEnd}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onClick={() => handleRotate(piece.id)}
-            style={{
-              position: "absolute",
-              left: piece.x,
-              top: piece.y,
-              transform: `rotate(${rotation[piece.id] || 0}deg)`,
-              cursor: "grab",
-            }}
-          >
-            <img
-              src={piece.image}
-              alt={`Tangram piece ${piece.id}`}
-              className="w-20 h-20 rounded-lg transition-transform hover:scale-105"
-            />
-          </div>
-        ))}
+        {boardPieces.map((piece) => {
+  const estaSiendoMovida = bloqueadas[piece.id];
+  return (
+    <div
+      key={`pieza-tablero-${piece.id}`}
+      draggable={isPlaying}
+      onDragStart={(e) => handleDragStart(e, piece.id)}
+      onDragEnd={handleDragEnd}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onClick={() => handleRotate(piece.id)}
+      style={{
+        position: "absolute",
+        left: piece.x,
+        top: piece.y,
+        transform: `rotate(${rotation[piece.id] || 0}deg)`,
+        cursor: "grab",
+      }}
+    >
+      <img
+        src={piece.image}
+        alt={`Tangram piece ${piece.id}`}
+        className="w-20 h-20 rounded-lg transition-transform hover:scale-105"
+      />
+      {estaSiendoMovida && (
+        <div className="absolute top-0 left-20 bg-black bg-opacity-70 text-white text-[10px] px-2 py-1 rounded z-50 pointer-events-none whitespace-nowrap">
+          {estaSiendoMovida}
+        </div>
+
+      )}
+    </div>
+  );
+})}
       </div>
 
       {/* Chat */}
