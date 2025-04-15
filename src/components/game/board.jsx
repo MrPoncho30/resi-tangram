@@ -11,7 +11,6 @@ import TrianglePinkSVG from "../../assets/triangulo_rosa.png";
 import TriangleGreenSVG from "../../assets/triangulo_verde.png";
 
 const IMAGES = [{ id: 1, url: casaTangram }];
-
 const PIECES = [
   { id: 0, image: TriangleYellowSVG },
   { id: 1, image: TriangleBlueSVG },
@@ -28,69 +27,55 @@ const Board = () => {
   const [boardPieces, setBoardPieces] = useState([]);
   const [rotation, setRotation] = useState({});
   const [draggingPiece, setDraggingPiece] = useState(null);
-  const [socket, setSocket] = useState(null);
+  const [bloqueadas, setBloqueadas] = useState({});
   const boardRef = useRef();
+  const socket = useRef(null);
 
   const nickname = localStorage.getItem("nickname");
   const studentName = localStorage.getItem("studentName");
   const teamId = localStorage.getItem("teamId");
   const teamName = localStorage.getItem("teamName");
-  const codigoSesion = localStorage.getItem("codigoSesion");
 
   useEffect(() => {
-     const ws = new WebSocket("ws://127.0.0.1:8000/ws/sesiones/ZH8WRW/" );
-    setSocket(ws);
+    // Retardo pequeño para asegurar que teamId ya esté cargado
+    const timeout = setTimeout(() => {
+      socket.current = new WebSocket(`ws://127.0.0.1:8000/ws/sesiones/ZH8WRW/`);
 
-    ws.onopen = () => console.log("✅ WebSocket conectado");
+      socket.current.onopen = () => {
+        console.log("✅ Conectado al WebSocket del equipo:", teamId);
+      };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.tipo === "actualizar_tangram") {
-        console.log("📥 Estado recibido:", data.estado);
-
-        const nuevasPiezas = data.estado.piezas;
-        setBoardPieces(nuevasPiezas);
-
-        const nuevasRotaciones = {};
-        nuevasPiezas.forEach((pieza) => {
-          nuevasRotaciones[pieza.id] = pieza.angulo || 0;
-        });
-        setRotation(nuevasRotaciones);
-      }
-    };
-
-    ws.onclose = () => console.log("❌ WebSocket cerrado");
+      socket.current.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.tipo === "actualizar_tangram") {
+          const nuevasPiezas = data.estado.pieces;
+          setBoardPieces(nuevasPiezas);
+          setRotation(data.estado.rotation);
+      
+          // 🧠 Nuevo: eliminar del contenedor las piezas que ya están en el tablero
+          const idsEnTablero = nuevasPiezas.map((p) => p.id);
+          setPiecesState((prev) => prev.filter((p) => !idsEnTablero.includes(p.id)));
+        } else if (data.tipo === "pieza_bloqueada") {
+          setBloqueadas((prev) => ({
+            ...prev,
+            [data.pieza_id]: data.usuario,
+          }));
+        } else if (data.tipo === "pieza_liberada") {
+          setBloqueadas((prev) => {
+            const nuevo = { ...prev };
+            delete nuevo[data.pieza_id];
+            return nuevo;
+          });
+        }
+      };
+      
+    }, 100); // medio milisegundo no existe, usamos 100ms
 
     return () => {
-      ws.close();
+      clearTimeout(timeout);
+      if (socket.current) socket.current.close();
     };
-  }, [codigoSesion]);
-
-  const enviarEstadoTangram = () => {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      console.warn("⚠️ WebSocket no está listo.");
-      return;
-    }
-
-    const estado = {
-      piezas: boardPieces.map((pieza) => ({
-        id: pieza.id,
-        x: pieza.x,
-        y: pieza.y,
-        angulo: rotation[pieza.id] || 0,
-        image: pieza.image,
-      })),
-    };
-
-    const mensaje = {
-      tipo: "actualizar_tangram",
-      estado,
-    };
-
-    console.log("📤 Enviando estado al servidor:", mensaje);
-    socket.send(JSON.stringify(mensaje));
-  };
+  }, [teamId]);
 
   const handleReady = () => setIsPlaying(true);
 
@@ -98,6 +83,14 @@ const Board = () => {
     if (!isPlaying) return;
     e.dataTransfer.setData("id", id.toString());
     setDraggingPiece(id);
+
+    socket.current?.send(
+      JSON.stringify({
+        tipo: "bloquear_pieza",
+        pieza_id: id,
+        usuario: nickname,
+      })
+    );
   };
 
   const handleDrag = (e) => {
@@ -107,9 +100,7 @@ const Board = () => {
     const newY = e.clientY - boardRect.top - 40;
 
     setBoardPieces((prev) =>
-      prev.map((p) =>
-        p.id === draggingPiece ? { ...p, x: newX, y: newY } : p
-      )
+      prev.map((p) => (p.id === draggingPiece ? { ...p, x: newX, y: newY } : p))
     );
   };
 
@@ -118,14 +109,11 @@ const Board = () => {
 
     const boardRect = boardRef.current.getBoundingClientRect();
 
-    setBoardPieces((prev) => {
-      const updated = prev.map((p) => {
+    setBoardPieces((prev) =>
+      prev.map((p) => {
         if (p.id === draggingPiece) {
           const isOutside =
-            p.x < 0 ||
-            p.y < 0 ||
-            p.x > boardRect.width - 80 ||
-            p.y > boardRect.height - 80;
+            p.x < 0 || p.y < 0 || p.x > boardRect.width - 80 || p.y > boardRect.height - 80;
 
           if (isOutside) {
             return {
@@ -136,11 +124,15 @@ const Board = () => {
           }
         }
         return p;
-      });
+      })
+    );
 
-      setTimeout(() => enviarEstadoTangram(), 0);
-      return updated;
-    });
+    socket.current?.send(
+      JSON.stringify({
+        tipo: "liberar_pieza",
+        pieza_id: draggingPiece,
+      })
+    );
 
     setDraggingPiece(null);
   };
@@ -149,7 +141,8 @@ const Board = () => {
     if (!isPlaying) return;
     e.preventDefault();
     const id = parseInt(e.dataTransfer.getData("id"));
-    const piece = piecesState.find((p) => p.id === id) || boardPieces.find((p) => p.id === id);
+    const piece =
+      piecesState.find((p) => p.id === id) || boardPieces.find((p) => p.id === id);
     if (!piece) return;
 
     const boardRect = boardRef.current.getBoundingClientRect();
@@ -157,17 +150,25 @@ const Board = () => {
     const newY = e.clientY - boardRect.top - 40;
 
     if (
-      newX >= 0 && newX <= boardRect.width - 80 &&
-      newY >= 0 && newY <= boardRect.height - 80
+      newX >= 0 &&
+      newX <= boardRect.width - 80 &&
+      newY >= 0 &&
+      newY <= boardRect.height - 80
     ) {
-      const newBoard = [
-        ...boardPieces.filter((p) => p.id !== id),
-        { ...piece, x: newX, y: newY },
-      ];
-      setBoardPieces(newBoard);
+      const nuevaPieza = { ...piece, x: newX, y: newY };
+      const nuevasPiezas = [...boardPieces.filter((p) => p.id !== id), nuevaPieza];
+      setBoardPieces(nuevasPiezas);
       setPiecesState((prev) => prev.filter((p) => p.id !== id));
 
-      setTimeout(() => enviarEstadoTangram(), 0);
+      socket.current?.send(
+        JSON.stringify({
+          tipo: "actualizar_tangram",
+          estado: {
+            pieces: nuevasPiezas,
+            rotation,
+          },
+        })
+      );
     }
   };
 
@@ -175,37 +176,56 @@ const Board = () => {
 
   const handleRotate = (id) => {
     if (!isPlaying) return;
+    const nuevaRotacion = {
+      ...rotation,
+      [id]: (rotation[id] || 0) + 45,
+    };
+    setRotation(nuevaRotacion);
 
-    setRotation((prev) => {
-      const newRot = {
-        ...prev,
-        [id]: (prev[id] || 0) + 45,
-      };
-      setTimeout(() => enviarEstadoTangram(), 0);
-      return newRot;
-    });
+    socket.current?.send(
+      JSON.stringify({
+        tipo: "actualizar_tangram",
+        estado: {
+          pieces: boardPieces,
+          rotation: nuevaRotacion,
+        },
+      })
+    );
   };
+
+  console.log("Estas jugando como:", { studentName }, { nickname }, "Equipo: ID:", {
+    teamId,
+  }, "Nombre Eq: ", { teamName });
 
   return (
     <div className="flex h-screen bg-gradient-to-r from-blue-100 to-purple-100">
       {/* Contenedor de piezas */}
       <div className="w-1/6 bg-yellow-200 p-4 flex flex-col items-center space-y-4 rounded-tr-3xl rounded-br-3xl shadow-xl">
         <h2 className="text-xl font-bold text-pink-600 mb-2 font-comic">🧩 Piezas</h2>
-        {piecesState.map((piece) => (
-          <img
-            key={piece.id}
-            src={piece.image}
-            alt={`Tangram piece ${piece.id}`}
-            className={`w-20 h-20 cursor-pointer rounded-xl transition-transform hover:scale-110 ${
-              isPlaying ? "opacity-100" : "opacity-40"
-            }`}
-            draggable={isPlaying}
-            onDragStart={(e) => handleDragStart(e, piece.id)}
-          />
-        ))}
+        {piecesState.map((piece) => {
+          const estaBloqueada = bloqueadas[piece.id];
+          return (
+            <div key={`pieza-${piece.id}`} className="relative">
+              <img
+                src={piece.image}
+                alt={`Tangram piece ${piece.id}`}
+                className={`w-20 h-20 cursor-pointer rounded-xl transition-transform ${
+                  isPlaying ? "opacity-100" : "opacity-40"
+                } ${estaBloqueada ? "opacity-30 grayscale" : "hover:scale-110"}`}
+                draggable={isPlaying && !estaBloqueada}
+                onDragStart={(e) => handleDragStart(e, piece.id)}
+              />
+              {estaBloqueada && (
+                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-xs text-red-700 font-bold pointer-events-none">
+                  Ocupado
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {/* Tablero de Tangram */}
+      {/* Tablero */}
       <div
         ref={boardRef}
         className="flex-1 relative bg-white border-4 border-blue-300 rounded-3xl m-4 p-4 shadow-2xl"
@@ -215,11 +235,19 @@ const Board = () => {
         onDragEnd={handleDragEnd}
       >
         {isPlaying ? (
-          <h1 className="text-2xl font-bold text-center mb-4 text-purple-700 font-comic animate-bounce">¡A Jugar!</h1>
+          <h1 className="text-2xl font-bold text-center mb-4 text-purple-700 font-comic animate-bounce">
+            ¡A Jugar!
+          </h1>
         ) : (
           <div className="flex flex-col items-center text-center">
-            <h2 className="text-xl font-bold text-blue-800 mb-2 font-comic">🎯 Recrea esta figura:</h2>
-            <img src={IMAGES[0].url} alt="Tangram objetivo" className="w-64 h-64 border-4 border-green-400 rounded-xl" />
+            <h2 className="text-xl font-bold text-blue-800 mb-2 font-comic">
+              🎯 Recrea esta figura:
+            </h2>
+            <img
+              src={IMAGES[0].url}
+              alt="Tangram objetivo"
+              className="w-64 h-64 border-4 border-green-400 rounded-xl"
+            />
             <button
               onClick={handleReady}
               className="mt-4 px-6 py-3 bg-green-500 hover:bg-green-600 text-white text-lg font-bold rounded-full shadow-lg transition"
@@ -232,7 +260,7 @@ const Board = () => {
         {/* Renderizar piezas en el tablero */}
         {boardPieces.map((piece) => (
           <div
-            key={piece.id}
+            key={`pieza-tablero-${piece.id}`}
             draggable={isPlaying}
             onDragStart={(e) => handleDragStart(e, piece.id)}
             onDragEnd={handleDragEnd}
@@ -256,9 +284,11 @@ const Board = () => {
         ))}
       </div>
 
-      {/* Chat lateral */}
+      {/* Chat */}
       <div className="w-1/3 bg-pink-100 border-l-4 border-pink-300 p-4 rounded-tl-3xl rounded-bl-3xl shadow-xl">
-        <h2 className="text-xl font-bold text-center text-pink-700 mb-2 font-comic">💬 Chat del Equipo</h2>
+        <h2 className="text-xl font-bold text-center text-pink-700 mb-2 font-comic">
+          💬 Chat del Equipo
+        </h2>
         <ChatRoom teamId={teamId} />
       </div>
     </div>
