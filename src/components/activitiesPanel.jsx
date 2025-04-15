@@ -288,14 +288,19 @@ console.log('datos enviando si o si', (nuevaActividad))
         <div className="min-h-screen bg-gray-100 flex">
           <Navbar />
           <div className="flex-1 p-6">
-            <h2 className="text-xl font-semibold mb-4">Panel de Actividades</h2>
-            <button onClick={() => navigate(-1)} className="flex items-center text-gray-700 hover:text-gray-900 mb-4">
-              <FaArrowLeft className="mr-2" /> Volver
-            </button>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-gray-800">Panel de Actividades</h1>
+              <button 
+              onClick={() => navigate(-1)}             className="flex items-center text-gray-700 hover:text-gray-900"
+              >
+                <FaArrowLeft className="mr-2" /> Volver
+              </button>
+              </div>
+
             <button onClick={() => setShowForm(true)} className="mb-4 bg-green-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-800 transition">
               Crear Actividad
             </button>
-
+            
             {showForm && (
               <form onSubmit={handleSubmit} className="mb-4 bg-white p-4 rounded-lg shadow-md">
                 <label className="block mb-2">
@@ -305,11 +310,26 @@ console.log('datos enviando si o si', (nuevaActividad))
                 <label className="block mb-2">
                   Tiempo de la Actividad:
                   <div className="flex gap-2">
-                    <input type="number" min="0" value={newActivity.horas} onChange={(e) => setNewActivity({ ...newActivity, horas: parseInt(e.target.value) || 0 })} className="border p-2 w-16 rounded-md" placeholder="hh" required />
+                    
+                    <div className="flex flex-col items-center">
+                      <input type="number" min="0" value={newActivity.horas} onChange={(e) => setNewActivity({...newActivity, horas: parseInt(e.target.value) || 0 })}
+                        className="border p-2 w-16 rounded-md text-center" placeholder="hh" required/>
+                      <span className="text-sm text-gray-600 mt-1">hh</span>
+                    </div>
                     <span>:</span>
-                    <input type="number" min="0" max="59" value={newActivity.minutos} onChange={(e) => setNewActivity({ ...newActivity, minutos: parseInt(e.target.value) || 0 })} className="border p-2 w-16 rounded-md" placeholder="mm" required />
+
+                    <div className="flex flex-col items-center">
+                      <input type="number" min="0" max="59" value={newActivity.minutos} onChange={(e) => setNewActivity({ ...newActivity, minutos: parseInt(e.target.value) || 0 })}
+                        className="border p-2 w-16 rounded-md text-center" placeholder="mm" required />
+                      <span className="text-sm text-gray-600 mt-1">mm</span>
+                    </div>
                     <span>:</span>
-                    <input type="number" min="0" max="59" value={newActivity.segundos} onChange={(e) => setNewActivity({ ...newActivity, segundos: parseInt(e.target.value) || 0 })} className="border p-2 w-16 rounded-md" placeholder="ss" required />
+
+                    <div className="flex flex-col items-center">
+                      <input type="number" min="0" max="59" value={newActivity.segundos} onChange={(e) => setNewActivity({ ...newActivity, segundos: parseInt(e.target.value) || 0 })}
+                        className="border p-2 w-16 rounded-md text-center" placeholder="ss" required />
+                      <span className="text-sm text-gray-600 mt-1">ss</span>
+                    </div>
                   </div>
                 </label>
 
@@ -333,9 +353,9 @@ console.log('datos enviando si o si', (nuevaActividad))
               </form>
             )}
 
-            <table className="w-full border-collapse border border-gray-300">
+              <table className="w-full bg-white rounded-lg shadow-md overflow-hidden">
               <thead>
-                <tr className="bg-gray-200">
+                <tr className="bg-gray-200 text-gray-700"s>
                   <th className="border p-2">Nombre</th>
                   <th className="border p-2">Tiempo</th>
                   <th className="border p-2">Salón</th> 
@@ -343,8 +363,9 @@ console.log('datos enviando si o si', (nuevaActividad))
                 </tr>
               </thead>
               <tbody>
-                {actividades.map((actividad) => (
-                  <tr key={actividad.id} className="text-center">
+                {actividades.length > 0 ? ( 
+                actividades.map((actividad) => (
+                  <tr key={actividad.id} className="text-center border-b hover:bg-gray-100">
                     <td className="border p-2">{actividad.nombre}</td>
                     <td className="border p-2">
                       {`${String(actividad.horas).padStart(2, '0')}:${String(actividad.minutos).padStart(2, '0')}:${String(actividad.segundos).padStart(2, '0')}`}
@@ -358,9 +379,17 @@ console.log('datos enviando si o si', (nuevaActividad))
                       <button onClick={() => console.log('Editar actividad', actividad)} className="bg-yellow-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-yellow-700">Editar</button>
                       <button onClick={() => handleEliminarActividad(actividad.id)} className="bg-red-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-red-700">Eliminar</button>
                       <button onClick={() => handleAssignToClass(actividad.id)} className="bg-green-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-green-700">Asignar a</button>
+                      <button onClick={() => handleAssignToClass(actividad.id)} className="bg-green-900 text-white px-2 py-1 rounded-md mx-1 hover:bg-green-700">Activar</button>
                     </td>
                   </tr>
-                ))}
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="px-4 py-2 text-center text-gray-500">
+                    No hay actividades disponibles
+                  </td>
+                </tr>
+              )}
               </tbody>
             </table>
 

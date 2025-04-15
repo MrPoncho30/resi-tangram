@@ -11,6 +11,7 @@ const API_URL_LIST_EQUIPOS = "http://127.0.0.1:8000/equipos/api/listar_equipos/"
 const API_URL_CREATE_EQUIPO = "http://127.0.0.1:8000/equipos/api/crear_equipo/";
 const API_URL_ASSIGN_ALUMNOS = "http://127.0.0.1:8000/estudiantes/api/agregar_equipo_estudiante/";
 const API_URL_DELETE_EQUIPO = "http://127.0.0.1:8000/equipos/api/eliminar_equipo/";
+const API_URL_MEMBERS_TEAM = "http://127.0.0.1:8000/equipos/api/estudiantes_por_equipo/"
 
 
 const ClassroomStudents = () => {
@@ -35,11 +36,61 @@ const ClassroomStudents = () => {
   const [editingAlumno, setEditingAlumno] = useState(null);
   const [selectedAlumnos, setSelectedAlumnos] = useState([]);
   const [selectedEquipoId, setSelectedEquipoId] = useState(null);
-  
-  
+  const [showViewEquipoModal, setShowViewEquipoModal] = useState(false); // Modal exclusivo para "Ver equipo"
+  const [alumnosEquipo, setAlumnosEquipo] = useState([]); // Esta es la lista de alumnos solo para el modal
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-
-  // Función para obtener los alumnos desde la API
+  
+  // Función para abrir el modal de "Ver equipo" y obtener los alumnos
+  const handleOpenViewEquipoModal = async (equipoId) => {
+    setShowViewEquipoModal(true);
+    setSelectedEquipoId(equipoId);
+    setLoading(true);
+    setError("");
+  
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        console.error('No se encontró el token de acceso.');
+        return;
+      }
+  
+      const response = await fetch(`${API_URL_MEMBERS_TEAM}${equipoId}/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error("Error al obtener los estudiantes");
+      }
+  
+      const data = await response.json();
+  
+      // Si no hay estudiantes, mostrar mensaje sin estudiantes
+      if (data.length === 0) {
+        setAlumnosEquipo([]); // Si no hay estudiantes en el equipo, lista vacía
+      } else {
+        setAlumnosEquipo(data); // Establecer los estudiantes del equipo
+      }
+    } catch (err) {
+      setError("Error al cargar los estudiantes.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleCloseViewEquipoModal = () => {
+    setShowViewEquipoModal(false);
+    setSelectedEquipoId(null);
+    setAlumnosEquipo([]); // Limpiar los estudiantes del modal
+  };
+  
+    
+    // Función para obtener los alumnos desde la API
   const fetchAlumnos = async () => {
     try {
       const accessToken = localStorage.getItem('accessToken');
@@ -99,6 +150,8 @@ const ClassroomStudents = () => {
       if (!Array.isArray(data)) {
         throw new Error('La respuesta de la API no es un array válido.');
       }
+
+      
       
     // Llamamos a la API de códigos para cada equipo y agregamos la información
     const equiposConCodigos = await Promise.all(data.map(async (equipo) => {
@@ -132,7 +185,7 @@ const ClassroomStudents = () => {
     console.error('Error al cargar los equipos:', error.message);
   }
 };
-  
+
 const fetchEquiposConEstado = async () => {
   try {
     const accessToken = localStorage.getItem("accessToken");
@@ -141,7 +194,7 @@ const fetchEquiposConEstado = async () => {
       return;
     }
 
-    const response = await fetch("http://127.0.0.1:8000/equipos/api/lista_con_sesion/", {
+    const response = await fetch("http://127.0.0.1:8000/equipos/api/lista_equipos_con_sesion/", {
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${accessToken}`,
@@ -163,7 +216,7 @@ const fetchEquiposConEstado = async () => {
   useEffect(() => {
     fetchAlumnos();  // Llamamos a la función para obtener los alumnos
     fetchEquipos();  // Llamamos a la función para obtener los equipos
-    fetchEquiposConEstado(); //LLamamos a la funcion para obtener estado de los eequipos
+    fetchEquiposConEstado(); //LLamamos a la funcion para obtener estado de los equipos
   }, [id]);
 
   
@@ -454,8 +507,8 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                   type="checkbox"
                   id={`alumno-${alumno.id}`}
                   onChange={() => handleCheckboxChange(alumno.id)}
-                  checked={selectedAlumnos.includes(alumno.id)} // Marca el checkbox si está en selectedAlumnos
-                  disabled={alumnosConEquipo.some(a => a.id === alumno.id)}  // Deshabilita si el alumno ya tiene equipo asignado
+                  checked={selectedAlumnos.includes(alumno.id) || alumnosConEquipo.some(a => a.id === alumno.id)} 
+                  // disabled={alumnosConEquipo.some(a => a.id === alumno.id)}  // Deshabilita si el alumno ya tiene equipo asignado
                 />
                 <label 
                   htmlFor={`alumno-${alumno.id}`} 
@@ -584,7 +637,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                   equipos.map((equipo) => (
                     <tr key={equipo.id}>
                       <td className="px-4 py-2">{equipo.nombre}</td>
-                      <td className="px-4 py-2">{equipo.integrantes?.length || 0}</td>
+                      <td className="px-4 py-2">{equipo.integrantes || 0}</td>
                       <td className="px-4 py-2">{equipo.codigo || "N/A"}</td>
                       <td className="px-4 py-2 text-center">
                         <label className="inline-flex items-center cursor-pointer">
@@ -604,8 +657,12 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                         </label>
                       </td>
                       <td className="px-4 py-2">
-                        <button className="bg-blue-500 text-white px-3 py-1 rounded mr-2">Ver equipo</button>
                         <button
+                          className="bg-blue-500 text-white px-3 py-1 rounded mr-2"
+                          onClick={() => handleOpenViewEquipoModal(equipo.id)}
+                        >
+                          Ver equipo
+                        </button>                        <button
                           onClick={() => handleAsignarAlumnosClick(equipo.id)}
                           className="py-1 px-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                         >
@@ -695,6 +752,42 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
             handleAsignar={handleAsignarAlumnos}
           />
         )}
+
+        {/* Modal de "Ver equipo" */}
+        {showViewEquipoModal && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                <div className="bg-white p-5 rounded-lg shadow-lg w-1/3">
+                  <h2 className="text-xl font-bold mb-4">Estudiantes del Equipo</h2>
+
+                  {/* Mostrar loading o error */}
+                  {loading ? (
+                    <p className="text-center">Cargando...</p>
+                  ) : error ? (
+                    <p className="text-center text-red-500">{error}</p>
+                  ) : (
+                     <ul>
+                      {alumnosEquipo.length > 0 ? (
+                        alumnosEquipo.map((alumno) => (
+                          <li key={alumno.id} className="py-1 border-b">
+                            {alumno.nombre} {alumno.apellidos} - {alumno.nickname}
+                          </li>
+                        ))
+                      ) : (
+                        <p className="text-center">Sin estudiantes</p> 
+                      )}
+                    </ul>
+
+                  )}
+
+                  <button
+                    className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                    onClick={handleCloseViewEquipoModal}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            )}
 
       </div>
     </div>

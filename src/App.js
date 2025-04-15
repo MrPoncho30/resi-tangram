@@ -12,11 +12,12 @@ import ActivitiesPanel from './components/activitiesPanel';
 import Login from "./components/students/loginStudent"; // Login de estudiante
 import TeamSpace from "./components/students/teamSpace";
 
-//Componentes del JUEGO 
+// Componentes del JUEGO 
 import TangramGame  from './components/game/tangramPuzzle';
 import Board from "./components/game/board";
 
-
+// Componentes del CHATA
+import ChatRoom from './components/game/chat/chatRoom';
 function App() {
   const [student, setStudent] = useState(null);
 
@@ -40,9 +41,15 @@ function App() {
           } 
         />
         
+       {/* Ruta para el chat, pasando el nickname al componente ChatRoom */}
+       <Route 
+          path="/chatroom" 
+          element={student ? <ChatRoom nickname={student.nickname} /> : <Login onJoin={(nickname, teamCode) => setStudent({ nickname, teamCode })} />}
+        />
+
         {/* Ruta para la pantalla de juego tangram */}
         <Route path="/components/game/tangramPuzzle" element={<TangramGame />} />
-        <Route path="components/game/board" element={<Board />} /> 
+        <Route path="/components/game/board" element={<Board />} /> 
       </Routes>
     </Router>
   );

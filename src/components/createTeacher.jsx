@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import Swal from 'sweetalert2';
-import myImage from '../assets/Escritorio.png'
+import myImage from '../assets/fondo.png'
 
 
 function CreateTeacherForm() {

@@ -244,20 +244,20 @@ const Salones = () => {
     <table className="w-full bg-white rounded-lg shadow-md overflow-hidden">
       <thead>
         <tr className="bg-gray-200 text-gray-700">
-          <th className="px-4 py-2 text-left">Grado</th>
-          <th className="px-4 py-2 text-left">Grupo</th>
-          <th className="px-4 py-2 text-left">Ciclo Escolar</th>
-          <th className="px-4 py-2 text-center">Acciones</th>
+          <th className="border p-2">Grado</th>
+          <th className="border p-2">Grupo</th>
+          <th className="border p-2">Ciclo Escolar</th>
+          <th className="border p-2">Acciones</th>
         </tr>
       </thead>
       <tbody>
         {salones.length > 0 ? (
           salones.map((salon) => (
-            <tr key={salon.id} className="border-b hover:bg-gray-100">
-              <td className="px-4 py-2">{salon.grado}</td>
-              <td className="px-4 py-2">{salon.grupo}</td>
-              <td className="px-4 py-2">{salon.ciclo_escolar_inicio} - {salon.ciclo_escolar_fin}</td>
-              <td className="px-4 py-2 text-center">
+            <tr key={salon.id} className="text-center border-b hover:bg-gray-100">
+              <td className="border p-2">{salon.grado}</td>
+              <td className="border p-2">{salon.grupo}</td>
+              <td className="border p-2">{salon.ciclo_escolar_inicio} - {salon.ciclo_escolar_fin}</td>
+              <td className="border p-2">
                 <button
                   onClick={() => navigate(`/salon/${salon.id}/alumnos`)}
                   className="py-1 px-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 mr-2"

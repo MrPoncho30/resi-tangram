@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaLock } from 'react-icons/fa';
 import myImage from '../assets/img_login_teacher.jpg'; 
-import myImage2 from '../assets/Escritorio.png'; 
+import myImage2 from '../assets/fondo.png'; 
 import myLogo from '../assets/logo_tan.png';
 
 function LoginTeacher() {
