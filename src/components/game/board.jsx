@@ -30,8 +30,6 @@ const Board = () => {
   const [bloqueadas, setBloqueadas] = useState({});
   const [movingBy, setMovingBy] = useState(null);
   const [piecesBeingMoved, setPiecesBeingMoved] = useState({}); // { piezaId: nombre }
-  const [jugadoresListos, setJugadoresListos] = useState([]);
-
   const boardRef = useRef();
   const socket = useRef(null);
 
@@ -204,16 +202,6 @@ const Board = () => {
       })
     );
   };
-
-  const handlePlayerReady = () => {
-    socket.current?.send(
-      JSON.stringify({
-        tipo: "jugador_listo",
-        nombre: nickname,
-      })
-    );
-  };
-  
 
   console.log("Estas jugando como:", { studentName }, { nickname }, "Equipo: ID:", {
     teamId,
