@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import ChatRoom from "./chat/chatRoom";
-import casaTangram from "../../assets/casa_tangram.png";
 
 import SquareSVG from "../../assets/cuadrado_rojo.png";
 import ParallelogramSVG from "../../assets/trapecio_azul.png";
@@ -10,7 +9,6 @@ import TrianglePurpleSVG from "../../assets/triangulo_morado.png";
 import TrianglePinkSVG from "../../assets/triangulo_rosa.png";
 import TriangleGreenSVG from "../../assets/triangulo_verde.png";
 
-const IMAGES = [{ id: 1, url: casaTangram }];
 const PIECES = [
   { id: 0, image: TriangleYellowSVG },
   { id: 1, image: TriangleBlueSVG },
@@ -29,7 +27,6 @@ const Board = () => {
   const [draggingPiece, setDraggingPiece] = useState(null);
   const [bloqueadas, setBloqueadas] = useState({});
   const [movingBy, setMovingBy] = useState(null);
-  const [piecesBeingMoved, setPiecesBeingMoved] = useState({}); // { piezaId: nombre }
   const boardRef = useRef();
   const socket = useRef(null);
 
@@ -38,35 +35,37 @@ const Board = () => {
   const teamId = localStorage.getItem("teamId");
   const teamName = localStorage.getItem("teamName");
 
+  const actividad = JSON.parse(localStorage.getItem("activeActivity"));
+  const IMAGES = actividad?.banco_tangrams || [];
+
+  console.log("📦 Actividad activa desde localStorage:", actividad);
+  console.log("🖼️ Imágenes ligadas a la actividad:", actividad?.banco_tangrams);
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       socket.current = new WebSocket(`ws://127.0.0.1:8000/ws/sesiones/ZH8WRW/`);
-  
+
       socket.current.onopen = () => {
-        console.log("✅ Conectado al WebSocket del equipo:", teamId);
+        console.log("\u2705 Conectado al WebSocket del equipo:", teamId);
       };
-  
+
       socket.current.onmessage = (e) => {
         const data = JSON.parse(e.data);
-  
+
         if (data.tipo === "actualizar_tangram") {
           const nuevasPiezas = data.estado.pieces;
           setBoardPieces(nuevasPiezas);
           setRotation(data.estado.rotation);
-  
+
           const idsEnTablero = nuevasPiezas.map((p) => p.id);
           setPiecesState((prev) => prev.filter((p) => !idsEnTablero.includes(p.id)));
-        }
-  
-        else if (data.tipo === "pieza_bloqueada") {
+        } else if (data.tipo === "pieza_bloqueada") {
           setBloqueadas((prev) => ({
             ...prev,
             [data.pieza_id]: data.usuario,
           }));
-          setMovingBy(data.usuario); // 👈 Mostrar quién está moviendo
-        }
-  
-        else if (data.tipo === "pieza_liberada") {
+          setMovingBy(data.usuario);
+        } else if (data.tipo === "pieza_liberada") {
           setBloqueadas((prev) => {
             const nuevo = { ...prev };
             delete nuevo[data.pieza_id];
@@ -76,13 +75,12 @@ const Board = () => {
         }
       };
     }, 100);
-  
+
     return () => {
       clearTimeout(timeout);
       if (socket.current) socket.current.close();
     };
   }, [teamId]);
-  
 
   const handleReady = () => setIsPlaying(true);
 
@@ -91,7 +89,7 @@ const Board = () => {
     e.dataTransfer.setData("id", id.toString());
     setDraggingPiece(id);
 
-    setMovingBy(nickname); // ESTO DEBE MOSTRAR EL NOMBRE DE QN LA MUEVE 
+    setMovingBy(nickname);
 
     socket.current?.send(
       JSON.stringify({
@@ -106,7 +104,7 @@ const Board = () => {
     if (!isPlaying || draggingPiece === null) return;
     const boardRect = boardRef.current.getBoundingClientRect();
     const newX = e.clientX - boardRect.left - 40;
-    const newY = e.clientY - boardRect.top - 40; 
+    const newY = e.clientY - boardRect.top - 40;
 
     setBoardPieces((prev) =>
       prev.map((p) => (p.id === draggingPiece ? { ...p, x: newX, y: newY } : p))
@@ -151,8 +149,7 @@ const Board = () => {
     if (!isPlaying) return;
     e.preventDefault();
     const id = parseInt(e.dataTransfer.getData("id"));
-    const piece =
-      piecesState.find((p) => p.id === id) || boardPieces.find((p) => p.id === id);
+    const piece = piecesState.find((p) => p.id === id) || boardPieces.find((p) => p.id === id);
     if (!piece) return;
 
     const boardRect = boardRef.current.getBoundingClientRect();
@@ -203,15 +200,10 @@ const Board = () => {
     );
   };
 
-  console.log("Estas jugando como:", { studentName }, { nickname }, "Equipo: ID:", {
-    teamId,
-  }, "Nombre Eq: ", { teamName });
-
   return (
     <div className="flex h-screen bg-gradient-to-r from-blue-100 to-purple-100">
-      {/* Contenedor de piezas */}
       <div className="w-1/6 bg-yellow-200 p-4 flex flex-col items-center space-y-4 rounded-tr-3xl rounded-br-3xl shadow-xl">
-        <h2 className="text-xl font-bold text-pink-600 mb-2 font-comic">🧩 Piezas</h2>
+        <h2 className="text-xl font-bold text-pink-600 mb-2 font-comic">Piezas</h2>
         {piecesState.map((piece) => {
           const estaBloqueada = bloqueadas[piece.id];
           return (
@@ -235,7 +227,6 @@ const Board = () => {
         })}
       </div>
 
-      {/* Tablero */}
       <div
         ref={boardRef}
         className="flex-1 relative bg-white border-4 border-blue-300 rounded-3xl m-4 p-4 shadow-2xl"
@@ -246,35 +237,35 @@ const Board = () => {
       >
         {isPlaying ? (
           <>
-          <h1 className="text-2xl font-bold text-center mb-4 text-purple-700 font-comic animate-bounce">
-            ¡A Jugar!
-          </h1>
-          {/* {movingBy && (
-            <div className="absolute top-0 left-0 w-full text-center text-lg font-bold text-blue-700">
-              <p>{movingBy} ESTA MOVIENDO A TU PUTA MADRE DE PIEZA</p>
-            </div>
-          )} */}
+            <h1 className="text-2xl font-bold text-center mb-4 text-purple-700 font-comic animate-bounce">
+              ¡A Jugar!
+            </h1>
           </>
         ) : (
           <div className="flex flex-col items-center text-center">
             <h2 className="text-xl font-bold text-blue-800 mb-2 font-comic">
-              🎯 Recrea esta figura:
+              ¡Bienvenido a la actividad! Recrea esta figura:
             </h2>
-            <img
-              src={IMAGES[0].url}
-              alt="Tangram objetivo"
-              className="w-64 h-64 border-4 border-green-400 rounded-xl"
-            />
+            {IMAGES.length > 0 ? (
+              <img
+                src={IMAGES[0]}
+                alt="Tangram objetivo"
+                className="w-64 h-64 border-4 border-green-400 rounded-xl"
+              />
+            ) : (
+              <p className="text-red-500 font-bold">
+                No hay imagen disponible para esta actividad activa.
+              </p>
+            )}
             <button
               onClick={handleReady}
               className="mt-4 px-6 py-3 bg-green-500 hover:bg-green-600 text-white text-lg font-bold rounded-full shadow-lg transition"
             >
-              ¡Estoy Listo! 🚀
+              Estoy Listo!
             </button>
           </div>
         )}
 
-        {/* Renderizar piezas en el tablero */}
         {boardPieces.map((piece) => {
           const estaSiendoMovida = bloqueadas[piece.id];
           return (
@@ -303,17 +294,15 @@ const Board = () => {
                 <div className="absolute top-0 left-20 bg-black bg-opacity-70 text-white text-[10px] px-2 py-1 rounded z-50 pointer-events-none whitespace-nowrap">
                   {estaSiendoMovida}
                 </div>
-
               )}
             </div>
           );
         })}
       </div>
 
-      {/* Chat */}
       <div className="w-1/3 bg-pink-100 border-l-4 border-pink-300 p-4 rounded-tl-3xl rounded-bl-3xl shadow-xl">
         <h2 className="text-xl font-bold text-center text-pink-700 mb-2 font-comic">
-          💬 Chat del Equipo
+         Chat del Equipo
         </h2>
         <ChatRoom teamId={teamId} />
       </div>
