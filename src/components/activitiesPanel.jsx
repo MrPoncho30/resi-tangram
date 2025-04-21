@@ -87,6 +87,7 @@ const ActivitiesPanel = () => {
     // fecha: new Date().toISOString().split('T')[0], // Fecha en formato YYYY-MM-DD
     salones: [],
     maestroId: teacherId,
+    activo: false,
   });
 
   const nuevaActividad = {
@@ -97,6 +98,7 @@ const ActivitiesPanel = () => {
     banco_tangrams: newActivity.imagenes || [], 
     salon: (newActivity.salones && newActivity.salones.length > 0) ? newActivity.salones[0] : null, 
     maestroId: teacherId,
+    activo: false
   };
   
 
@@ -109,6 +111,7 @@ console.log('datos enviando si o si', (nuevaActividad))
   console.log('Tipo de los minutos:', typeof nuevaActividad.minutos);
   console.log('Tipo de los segundos:', typeof nuevaActividad.segundos);
   console.log('Tipo del nombre:', typeof nuevaActividad.nombre);
+  console.log('Tipo del estado: ', typeof nuevaActividad.activo);
 
     try {
       const accessToken = localStorage.getItem('accessToken');
@@ -250,6 +253,51 @@ console.log('datos enviando si o si', (nuevaActividad))
     }
   };
 
+  //HANDLE PARA ACTIVAR ACTIVIDAD 
+  const handleToggleActivo = async (id, currentState) => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+  
+      const response = await fetch(`http://127.0.0.1:8000/actividades/api/activar_actividad/${id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ activo: !currentState }),
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        alert(data.error || 'Error al actualizar el estado');
+        return;
+      }
+  
+      // Actualiza el estado local manualmente
+      setActividades((prev) =>
+        prev.map((actividad) => {
+          // Desactiva las otras con el mismo salón si esta fue activada
+          if (actividad.id !== id && actividad.salon?.id === data.salon_id) {
+            return { ...actividad, activo: false };
+          }
+  
+          // Esta es la que acabamos de activar/desactivar
+          if (actividad.id === id) {
+            return { ...actividad, activo: data.activo };
+          }
+  
+          return actividad;
+        })
+      );
+  
+    } catch (error) {
+      console.error('Error al actualizar la actividad:', error);
+    }
+  };
+  
+  
+  
 
   useEffect(() => {
     const fetchActividades = async () => {
@@ -353,45 +401,72 @@ console.log('datos enviando si o si', (nuevaActividad))
               </form>
             )}
 
-              <table className="w-full bg-white rounded-lg shadow-md overflow-hidden">
-              <thead>
-                <tr className="bg-gray-200 text-gray-700"s>
-                  <th className="border p-2">Nombre</th>
-                  <th className="border p-2">Tiempo</th>
-                  <th className="border p-2">Salón</th> 
-                  <th className="border p-2">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {actividades.length > 0 ? ( 
-                actividades.map((actividad) => (
-                  <tr key={actividad.id} className="text-center border-b hover:bg-gray-100">
-                    <td className="border p-2">{actividad.nombre}</td>
-                    <td className="border p-2">
-                      {`${String(actividad.horas).padStart(2, '0')}:${String(actividad.minutos).padStart(2, '0')}:${String(actividad.segundos).padStart(2, '0')}`}
-                    </td>
-                      <td className="border p-2">
-                        {actividad.salon 
-                          ? `${actividad.salon.grado} - ${actividad.salon.grupo} (${actividad.salon.ciclo_escolar_inicio} - ${actividad.salon.ciclo_escolar_fin})`
-                          : 'No asignado'}
-                      </td>                    <td className="border p-2">
-                      <button onClick={() => console.log('Ver actividad', actividad)} className="bg-blue-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-blue-700">Ver</button>
-                      <button onClick={() => console.log('Editar actividad', actividad)} className="bg-yellow-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-yellow-700">Editar</button>
-                      <button onClick={() => handleEliminarActividad(actividad.id)} className="bg-red-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-red-700">Eliminar</button>
-                      <button onClick={() => handleAssignToClass(actividad.id)} className="bg-green-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-green-700">Asignar a</button>
-                      <button onClick={() => handleAssignToClass(actividad.id)} className="bg-green-900 text-white px-2 py-1 rounded-md mx-1 hover:bg-green-700">Activar</button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="4" className="px-4 py-2 text-center text-gray-500">
-                    No hay actividades disponibles
-                  </td>
-                </tr>
-              )}
-              </tbody>
-            </table>
+<table className="w-full bg-white rounded-lg shadow-md overflow-hidden">
+  <thead>
+    <tr className="bg-gray-200 text-gray-700">
+      <th className="border p-2">Nombre</th>
+      <th className="border p-2">Tiempo</th>
+      <th className="border p-2">Salón</th> 
+      <th className="border p-2">Estado</th> {/* Nueva columna */}
+      <th className="border p-2">Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {actividades.length > 0 ? ( 
+      actividades.map((actividad) => (
+        <tr key={actividad.id} className="text-center border-b hover:bg-gray-100">
+          <td className="border p-2">{actividad.nombre}</td>
+          <td className="border p-2">
+            {`${String(actividad.horas).padStart(2, '0')}:${String(actividad.minutos).padStart(2, '0')}:${String(actividad.segundos).padStart(2, '0')}`}
+          </td>
+          <td className="border p-2">
+            {actividad.salon 
+              ? `${actividad.salon.grado} - ${actividad.salon.grupo} (${actividad.salon.ciclo_escolar_inicio} - ${actividad.salon.ciclo_escolar_fin})`
+              : 'No asignado'}
+          </td>
+          <td className="border p-2">
+<label
+  className={`inline-flex items-center ${!actividad.salon?.id ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+  title={!actividad.salon?.id ? "Debes asignar un salón antes de activar esta actividad." : ""}
+>
+  <input
+    type="checkbox"
+    className="sr-only peer"
+    checked={actividad.activo}
+    onChange={() => handleToggleActivo(actividad.id, actividad.activo)}
+    disabled={!actividad.salon?.id} // Deshabilita si no tiene salón
+  />
+  <div className={`relative w-11 h-6 rounded-full transition-all
+    ${!actividad.salon?.id ? 'bg-gray-200 opacity-50' : 'bg-gray-200'}
+    peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700
+    peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600
+    peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
+    peer-checked:after:border-white
+    after:content-[''] after:absolute after:top-0.5 after:start-[2px]
+    after:bg-white after:border-gray-300 after:border after:rounded-full
+    after:h-5 after:w-5 after:transition-all dark:border-gray-600`}>
+  </div>
+</label>
+
+    </td>
+          <td className="border p-2">
+            <button onClick={() => console.log('Ver actividad', actividad)} className="bg-blue-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-blue-700">Ver</button>
+            <button onClick={() => console.log('Editar actividad', actividad)} className="bg-yellow-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-yellow-700">Editar</button>
+            <button onClick={() => handleEliminarActividad(actividad.id)} className="bg-red-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-red-700">Eliminar</button>
+            <button onClick={() => handleAssignToClass(actividad.id)} className="bg-green-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-green-700">Asignar a</button>
+          </td>
+        </tr>
+      ))
+    ) : (
+      <tr>
+        <td colSpan="5" className="px-4 py-2 text-center text-gray-500">
+          No hay actividades disponibles
+        </td>
+      </tr>
+    )}
+  </tbody>
+</table>
+
 
 
        {/* Modal Asignar a */}

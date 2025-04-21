@@ -72,7 +72,7 @@ const Board = () => {
             delete nuevo[data.pieza_id];
             return nuevo;
           });
-          setMovingBy(null); // 👈 Limpiar mensaje al soltar
+          setMovingBy(null);
         }
       };
     }, 100);
@@ -91,7 +91,7 @@ const Board = () => {
     e.dataTransfer.setData("id", id.toString());
     setDraggingPiece(id);
 
-    setMovingBy(nickname); //ESTO DEBE MOSTRAR A TU PUTA MADRE QUE LA ESTA MOVIENDO
+    setMovingBy(nickname); // ESTO DEBE MOSTRAR EL NOMBRE DE QN LA MUEVE 
 
     socket.current?.send(
       JSON.stringify({
@@ -106,7 +106,7 @@ const Board = () => {
     if (!isPlaying || draggingPiece === null) return;
     const boardRect = boardRef.current.getBoundingClientRect();
     const newX = e.clientX - boardRect.left - 40;
-    const newY = e.clientY - boardRect.top - 40;
+    const newY = e.clientY - boardRect.top - 40; 
 
     setBoardPieces((prev) =>
       prev.map((p) => (p.id === draggingPiece ? { ...p, x: newX, y: newY } : p))
@@ -276,38 +276,38 @@ const Board = () => {
 
         {/* Renderizar piezas en el tablero */}
         {boardPieces.map((piece) => {
-  const estaSiendoMovida = bloqueadas[piece.id];
-  return (
-    <div
-      key={`pieza-tablero-${piece.id}`}
-      draggable={isPlaying}
-      onDragStart={(e) => handleDragStart(e, piece.id)}
-      onDragEnd={handleDragEnd}
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onClick={() => handleRotate(piece.id)}
-      style={{
-        position: "absolute",
-        left: piece.x,
-        top: piece.y,
-        transform: `rotate(${rotation[piece.id] || 0}deg)`,
-        cursor: "grab",
-      }}
-    >
-      <img
-        src={piece.image}
-        alt={`Tangram piece ${piece.id}`}
-        className="w-20 h-20 rounded-lg transition-transform hover:scale-105"
-      />
-      {estaSiendoMovida && (
-        <div className="absolute top-0 left-20 bg-black bg-opacity-70 text-white text-[10px] px-2 py-1 rounded z-50 pointer-events-none whitespace-nowrap">
-          {estaSiendoMovida}
-        </div>
+          const estaSiendoMovida = bloqueadas[piece.id];
+          return (
+            <div
+              key={`pieza-tablero-${piece.id}`}
+              draggable={isPlaying}
+              onDragStart={(e) => handleDragStart(e, piece.id)}
+              onDragEnd={handleDragEnd}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onClick={() => handleRotate(piece.id)}
+              style={{
+                position: "absolute",
+                left: piece.x,
+                top: piece.y,
+                transform: `rotate(${rotation[piece.id] || 0}deg)`,
+                cursor: "grab",
+              }}
+            >
+              <img
+                src={piece.image}
+                alt={`Tangram piece ${piece.id}`}
+                className="w-20 h-20 rounded-lg transition-transform hover:scale-105"
+              />
+              {estaSiendoMovida && (
+                <div className="absolute top-0 left-20 bg-black bg-opacity-70 text-white text-[10px] px-2 py-1 rounded z-50 pointer-events-none whitespace-nowrap">
+                  {estaSiendoMovida}
+                </div>
 
-      )}
-    </div>
-  );
-})}
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Chat */}
