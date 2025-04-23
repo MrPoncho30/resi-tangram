@@ -133,7 +133,7 @@
 
 // export default LoginStudent;
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import myLogo from '../../assets/logo_tan.png';
 
@@ -143,6 +143,7 @@ function LoginStudent({ onJoin }) {
   const [teamMembers, setTeamMembers] = useState([]);
   const [selectedNickname, setSelectedNickname] = useState("");
   const [isCodeValidated, setIsCodeValidated] = useState(false);
+  const [equipoInfo, setEquipoInfo] = useState(null);
   const navigate = useNavigate(); 
 
   const handleValidateCode = async (e) => {
@@ -164,13 +165,9 @@ function LoginStudent({ onJoin }) {
       if (response.ok) {
         if (Array.isArray(data.estudiantes)) {
           setTeamMembers(data.estudiantes);
+          setEquipoInfo(data.equipo);
           setIsCodeValidated(true);
           setError("");
-
-          // Guardar datos del equipo en localStorage
-          localStorage.setItem("teamCode", teamCode);
-          localStorage.setItem("teamId", data.equipo.id_equipo);
-          localStorage.setItem("teamName", data.equipo.nombre_equipo);
         } else {
           setError("No se encontraron integrantes del equipo.");
         }
@@ -183,26 +180,35 @@ function LoginStudent({ onJoin }) {
   };
 
   const fetchActiveActivity = async () => {
-    const code = localStorage.getItem("teamCode");
-    if (!code) return;
-  
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/actividades/api/actividad_activa_por_equipo/${code}/`);
-      const data = await response.json();
-  
-      if (response.ok && data.id) {
-        console.log("Datos de actividad activa:", data); // 👈 Imprime los datos de la actividad
+    if (!teamCode) return;
 
-        localStorage.setItem("activeActivity", JSON.stringify(data));
-        navigate("/components/game/board");
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/actividades/api/actividad_activa_por_equipo/${teamCode}/`);
+      const data = await response.json();
+
+      const isActive = data?.activo === true || data?.activo === "true";
+
+      if (response.ok && data.id && isActive) {
+        console.log("Datos de actividad activa:", data);
+        navigate("/components/game/board", { state: { actividad: data, nickname: selectedNickname, studentName: selectedNickname, equipo: equipoInfo, teamCode } });
       } else {
         setError(data.mensaje || "No hay actividades activas por el momento.");
       }
+
     } catch (err) {
       setError("Error al obtener la actividad activa.");
     }
   };
-  
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isCodeValidated && selectedNickname) {
+        fetchActiveActivity();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isCodeValidated, selectedNickname]);
 
   const handleJoin = () => {
     if (!selectedNickname) {
@@ -210,15 +216,8 @@ function LoginStudent({ onJoin }) {
       return;
     }
 
-    localStorage.setItem("nickname", selectedNickname);
-
-    const selectedStudent = teamMembers.find(member => member.nickname === selectedNickname);
-    if (selectedStudent) {
-      localStorage.setItem("studentName", `${selectedStudent.nombre} ${selectedStudent.apellidos}`);
-    }
-
     onJoin(selectedNickname, teamCode); 
-    fetchActiveActivity(); // 👈 llamada para obtener actividad activa
+    fetchActiveActivity();
   };
 
   return (

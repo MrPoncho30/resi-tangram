@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
 import ChatRoom from "./chat/chatRoom";
 
-import SquareSVG from "../../assets/cuadrado_rojo.png";
-import ParallelogramSVG from "../../assets/trapecio_azul.png";
-import TriangleYellowSVG from "../../assets/triangulo_amarillo.png";
-import TriangleBlueSVG from "../../assets/triangulo_azul.png";
-import TrianglePurpleSVG from "../../assets/triangulo_morado.png";
-import TrianglePinkSVG from "../../assets/triangulo_rosa.png";
-import TriangleGreenSVG from "../../assets/triangulo_verde.png";
+import SquareSVG from "../../assets/T_cuadrado_rojo.png";
+import ParallelogramSVG from "../../assets/T_romboide_azul.png";
+import TriangleYellowSVG from "../../assets/T_triangulo_amarillo.png";
+import TriangleBlueSVG from "../../assets/T_triangulo_azul.png";
+import TrianglePurpleSVG from "../../assets/T_triangulo_morado.png";
+import TrianglePinkSVG from "../../assets/T_triangulo_rosa.png";
+import TriangleGreenSVG from "../../assets/T_triangulo_verde.png";
 
 const PIECES = [
   { id: 0, image: TriangleYellowSVG },
@@ -20,6 +22,17 @@ const PIECES = [
 ];
 
 const Board = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Se reciben los datos del login
+  const actividad = location.state?.actividad;
+  const nickname = location.state?.nickname;
+  const studentName = location.state?.studentName;
+  const teamId = location.state?.equipo?.id_equipo;
+  const teamName = location.state?.equipo?.nombre_equipo;
+  const codigoEquipo = location.state?.teamCode || location.state?.codigoEquipo || localStorage.getItem("teamCode");
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [piecesState, setPiecesState] = useState(PIECES);
   const [boardPieces, setBoardPieces] = useState([]);
@@ -27,26 +40,25 @@ const Board = () => {
   const [draggingPiece, setDraggingPiece] = useState(null);
   const [bloqueadas, setBloqueadas] = useState({});
   const [movingBy, setMovingBy] = useState(null);
+  const [actividadActiva, setActividadActiva] = useState(actividad?.activo === true || actividad?.activo === "true");
+  const [alertaDesactivada, setAlertaDesactivada] = useState(false);
+  const [cargandoActividad, setCargandoActividad] = useState(true); // 👈 nuevo
+
   const boardRef = useRef();
   const socket = useRef(null);
-
-  const nickname = localStorage.getItem("nickname");
-  const studentName = localStorage.getItem("studentName");
-  const teamId = localStorage.getItem("teamId");
-  const teamName = localStorage.getItem("teamName");
-
-  const actividad = JSON.parse(localStorage.getItem("activeActivity"));
   const IMAGES = actividad?.banco_tangrams || [];
+
+  // const actividadActiva = actividad?.activo === true || actividad?.activo === "true";
 
   console.log("📦 Actividad activa desde localStorage:", actividad);
   console.log("🖼️ Imágenes ligadas a la actividad:", actividad?.banco_tangrams);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      socket.current = new WebSocket(`ws://127.0.0.1:8000/ws/sesiones/ZH8WRW/`);
+      socket.current = new WebSocket(`ws://127.0.0.1:8000/ws/sesiones/${codigoEquipo}/`);
 
       socket.current.onopen = () => {
-        console.log("\u2705 Conectado al WebSocket del equipo:", teamId);
+        console.log("Conectado al WebSocket del equipo:", teamId);
       };
 
       socket.current.onmessage = (e) => {
@@ -82,9 +94,65 @@ const Board = () => {
     };
   }, [teamId]);
 
+  // Intervalo para verificar si la actividad sigue activa
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/actividades/api/actividad_activa_por_equipo/${codigoEquipo}/`);
+        const data = await res.json();
+  
+        if (!data.id || data.activo !== true) {
+          setActividadActiva(false);
+          setAlertaDesactivada(true);
+        } else {
+          setActividadActiva(true);
+          setAlertaDesactivada(false);
+        }
+      } catch (err) {
+        setActividadActiva(false);
+        setAlertaDesactivada(true);
+      } finally {
+        setCargandoActividad(false); // 👈 ya se terminó de cargar
+      }
+    }, 5000);
+  
+    return () => clearInterval(interval);
+  }, [codigoEquipo]);
+  
+
+  // Redirección automática cuando la actividad es desactivada
+  useEffect(() => {
+    if (!actividadActiva && alertaDesactivada) {
+      setTimeout(() => navigate("/components/students/loginStudent", { replace: true }), 3000);
+    }
+  }, [actividadActiva, alertaDesactivada, navigate]);
+
   const handleReady = () => setIsPlaying(true);
 
-  const handleDragStart = (e, id) => {
+  if (cargandoActividad) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <h2 className="text-2xl text-blue-600 font-bold text-center">
+          Cargando actividad...
+        </h2>
+      </div>
+    );
+  }
+  
+  if (!actividadActiva && alertaDesactivada) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <h2 className="text-2xl text-red-600 font-bold text-center">
+          La actividad fue desactivada por el profesor. Serás redirigido...
+        </h2>
+      </div>
+    );
+  }
+  
+
+  // const handleReady = () => setIsPlaying(true);
+
+const handleDragStart = (e, id) => {
     if (!isPlaying) return;
     e.dataTransfer.setData("id", id.toString());
     setDraggingPiece(id);
@@ -200,6 +268,16 @@ const Board = () => {
     );
   };
 
+  if (!actividadActiva) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <h2 className="text-2xl text-red-600 font-bold text-center">
+          No hay una actividad activa disponible en este momento.
+        </h2>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gradient-to-r from-blue-100 to-purple-100">
       <div className="w-1/6 bg-yellow-200 p-4 flex flex-col items-center space-y-4 rounded-tr-3xl rounded-br-3xl shadow-xl">
@@ -258,10 +336,13 @@ const Board = () => {
               </p>
             )}
             <button
-              onClick={handleReady}
-              className="mt-4 px-6 py-3 bg-green-500 hover:bg-green-600 text-white text-lg font-bold rounded-full shadow-lg transition"
-            >
-              Estoy Listo!
+                  onClick={handleReady}
+                  disabled={IMAGES.length === 0}
+                  className={`mt-4 px-6 py-3 text-white text-lg font-bold rounded-full shadow-lg transition ${
+                    IMAGES.length > 0 ? "bg-green-500 hover:bg-green-600" : "bg-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  Estoy Listo!
             </button>
           </div>
         )}
