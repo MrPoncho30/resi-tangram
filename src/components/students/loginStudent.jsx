@@ -136,6 +136,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import myLogo from '../../assets/logo_tan.png';
+import fondo from '../../assets/fondo.png'; 
+
 
 function LoginStudent({ onJoin }) {
   const [teamCode, setTeamCode] = useState("");
@@ -168,6 +170,10 @@ function LoginStudent({ onJoin }) {
           setEquipoInfo(data.equipo);
           setIsCodeValidated(true);
           setError("");
+
+             // Guardar cantidad de estudiantes en localStorage
+          localStorage.setItem("cantidadEstudiantes", data.estudiantes.length.toString());
+          console.log("ESTUDIANTES OBTENIDOS: ", data.estudiantes);
         } else {
           setError("No se encontraron integrantes del equipo.");
         }
@@ -215,14 +221,28 @@ function LoginStudent({ onJoin }) {
       setError("Por favor, selecciona un nickname.");
       return;
     }
-
-    onJoin(selectedNickname, teamCode); 
+  
+    // 🧠 Guardar nickname en sessionStorage para que esté disponible en toda la sesión
+    sessionStorage.setItem("nickname", selectedNickname);
+  
+    // También puedes guardar el código del equipo si lo usas después
+    sessionStorage.setItem("teamCode", teamCode);
+  
+    onJoin(selectedNickname, teamCode);
     fetchActiveActivity();
   };
+  
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gradient-to-br from-blue-200 to-indigo-300">
-      <div className="bg-white p-8 rounded-3xl shadow-lg w-96 text-center relative overflow-hidden">
+      <div
+          className="relative flex h-screen items-center justify-center bg-cover bg-center"
+          style={{ backgroundImage: `url(${fondo})` }}
+      >
+         {/* Overlay negro */}
+  <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
+
+{/* Contenido encima del overlay */}
+        <div className="bg-white p-8 rounded-3xl shadow-lg w-96 text-center relative overflow-hidden">
         <div className="flex justify-center mb-4">
           <img src={myLogo} alt="Logo" className="h-14 w-14" />
         </div>

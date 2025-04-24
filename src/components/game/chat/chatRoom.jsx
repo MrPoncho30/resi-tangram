@@ -1,10 +1,13 @@
 import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import useWebSocket from "react-use-websocket";
 
 const ChatRoom = () => {
-  const teamName = localStorage.getItem("teamName");
-  const nickname = localStorage.getItem("nickname");
-
+  const location = useLocation();
+  // const navigate = useNavigate();
+  
+  const teamName = location.state?.equipo?.nombre_equipo;
+  const nickname = location.state?.nickname;
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [replyToIndex, setReplyToIndex] = useState(null);

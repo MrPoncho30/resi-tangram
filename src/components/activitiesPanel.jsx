@@ -2,6 +2,19 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './navbar';
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import buitre from '../assets/buitre_tangram.png';
+import caballo from '../assets/caballo_tangram.png';
+import canguro from '../assets/canguro_tangram.png';
+import cisne from '../assets/cisne_tangram.png';
+import conejo from '../assets/conejo_tangram.png';
+import delfin from '../assets/delfin_tangram.png';
+import garza from '../assets/garza_tangram.png';
+import gato from '../assets/gato_tangram.png';
+import jirafa from '../assets/jirafa_tangram.png';
+import mariposa from '../assets/mariposa_tangram.png';
+import perro from '../assets/perro_tangram.png';
+import pez from '../assets/pez_tangram.png';
+import casa from '../assets/casa_tangram.png';
 
 const ActivitiesPanel = () => {
   const navigate = useNavigate();
@@ -17,13 +30,21 @@ const ActivitiesPanel = () => {
   const imagesPerPage = 4;
 
   const bancoTangrams = [
-    require('../assets/casa_tangram.png'),
-    require('../assets/casa_tangram.png'),
-    require('../assets/casa_tangram.png'),
-    require('../assets/logo_tan.png'),
-    require('../assets/logo_tan.png'),
-    require('../assets/logo_tan.png')
+    buitre,
+    caballo,
+    canguro,
+    cisne,
+    conejo,
+    delfin,
+    garza,
+    gato,
+    jirafa,
+    mariposa,
+    perro,
+    pez,
+    casa,
   ];
+  
   
 
   useEffect(() => {
@@ -395,7 +416,7 @@ console.log('datos enviando si o si', (nuevaActividad))
                     <button type="button" onClick={goToNextPage} disabled={currentIndex + imagesPerPage >= bancoTangrams.length} className="bg-gray-500 text-white py-2 px-4 rounded-md"> <FaArrowRight /> </button>
                   </div>
                 </div>
-
+                      <br></br>
                 <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded-md mr-2">Guardar</button>
                 <button type="button" onClick={() => setShowForm(false)} className="bg-gray-500 text-white py-2 px-4 rounded-md">Cancelar</button>
               </form>

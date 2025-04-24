@@ -40,6 +40,7 @@ const ClassroomStudents = () => {
   const [alumnosEquipo, setAlumnosEquipo] = useState([]); // Esta es la lista de alumnos solo para el modal
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [busqueda, setBusqueda] = useState("");
 
   
   // Función para abrir el modal de "Ver equipo" y obtener los alumnos
