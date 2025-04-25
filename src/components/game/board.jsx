@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import html2canvas from "html2canvas";
 
 import ChatRoom from "./chat/chatRoom";
 
@@ -48,35 +49,64 @@ const Board = () => {
   const socket = useRef(null);
   const IMAGES = actividad?.banco_tangrams || [];
 
+  /// PRUEBAS CHUY
+  const [indiceImagen, setIndiceImagen] = useState(0); // Imagen actual
+  const [usuariosListos, setUsuariosListos] = useState([]); // Quiénes ya dieron clic
+  const [totalUsuarios, setTotalUsuarios] = useState(0); // Total del equipo
+  ///
+  const [imagenesCapturadas, setImagenesCapturadas] = useState([]);
+
+
   // const actividadActiva = actividad?.activo === true || actividad?.activo === "true";
-
-  console.log("📦 Actividad activa desde localStorage:", actividad);
-  console.log("🖼️ Imágenes ligadas a la actividad:", actividad?.banco_tangrams);
-
+  const reiniciarTablero = () => {
+    setBoardPieces([]);
+    setPiecesState(PIECES); // Devuelve todas las piezas originales
+    setRotation({});        // Reinicia rotación
+  };
   useEffect(() => {
     const timeout = setTimeout(() => {
       socket.current = new WebSocket(`ws://127.0.0.1:8000/ws/sesiones/${codigoEquipo}/`);
-
+  
       socket.current.onopen = () => {
         console.log("Conectado al WebSocket del equipo:", teamId);
+      
+        // 🔥 Primero resetea localmente
+        setIndiceImagen(0);
+        setUsuariosListos([]);
+        setImagenesCapturadas([]);
+        setIsPlaying(false);
+        reiniciarTablero();
+      
+        // 🔥 Luego manda mensaje al servidor para reiniciar allá también
+        socket.current.send(
+          JSON.stringify({
+            tipo: "reiniciar_sesion",
+            nickname: nickname,
+            teamId: teamId,
+          })
+        );
       };
-
+      
+      
+  
       socket.current.onmessage = (e) => {
         const data = JSON.parse(e.data);
-
+  
         if (data.tipo === "actualizar_tangram") {
           const nuevasPiezas = data.estado.pieces;
           setBoardPieces(nuevasPiezas);
           setRotation(data.estado.rotation);
-
+  
           const idsEnTablero = nuevasPiezas.map((p) => p.id);
           setPiecesState((prev) => prev.filter((p) => !idsEnTablero.includes(p.id)));
+  
         } else if (data.tipo === "pieza_bloqueada") {
           setBloqueadas((prev) => ({
             ...prev,
             [data.pieza_id]: data.usuario,
           }));
           setMovingBy(data.usuario);
+  
         } else if (data.tipo === "pieza_liberada") {
           setBloqueadas((prev) => {
             const nuevo = { ...prev };
@@ -84,15 +114,93 @@ const Board = () => {
             return nuevo;
           });
           setMovingBy(null);
+  
+        } else if (data.tipo === "usuario_listo") {
+          setUsuariosListos(data.usuarios_listos);
+  
+          // Verifica si todos los usuarios están listos
+          const totalListos = data.usuarios_listos.length;
+          if (totalListos === totalUsuarios) {
+            console.log("✅ Todos los usuarios están listos. Enviando cambio de imagen...");
+  
+            // Solo uno envía el cambio de imagen
+            socket.current?.send(
+              JSON.stringify({
+                tipo: "cambiar_imagen",
+                nuevo_indice: indiceImagen + 1,
+              })
+            );
+          }
+  
+        } else if (data.tipo === "cambiar_imagen") {
+          const nuevoIndice = data.nuevo_indice;
+          setIndiceImagen(nuevoIndice);
+          setUsuariosListos([]);
+          reiniciarTablero();
+  
+          const total = IMAGES.length;
+          const restantes = total - (nuevoIndice + 1);
+  
+          console.log(`📸 Imagen actual: ${nuevoIndice + 1} de ${total}`);
+          console.log(`🧩 Quedan ${restantes} imágenes por mostrar.`);
         }
       };
     }, 100);
-
+  
     return () => {
       clearTimeout(timeout);
       if (socket.current) socket.current.close();
     };
   }, [teamId]);
+  
+
+  const handleFinalizar = async () => {
+    if (!boardRef.current) return; // Primero verifica que exista el tablero
+  
+    try {
+      // 🔥 1. Capturar la imagen actual antes de finalizar
+      const canvas = await html2canvas(boardRef.current);
+      const dataUrl = canvas.toDataURL("image/png");
+  
+      // 🔥 2. Agregar la última imagen a las capturas
+      const imagenesAEnviar = [...imagenesCapturadas, dataUrl];
+  
+      if (imagenesAEnviar.length === 0) {
+        alert("No hay imágenes que enviar.");
+        return;
+      }
+  
+      // 🔥 3. Ahora sí envía todas las imágenes (incluyendo la nueva)
+      const response = await fetch("http://127.0.0.1:8000/evidencias/api/crear_evidencia/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          actividad_id: actividad.id,
+          equipo_id: teamId,
+          imagenes: imagenesAEnviar, // ⬅️ enviamos el nuevo arreglo actualizado
+        }),
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        console.log("✅ Evidencia enviada:", data);
+        alert("Evidencia enviada con éxito 🎉");
+  
+        setImagenesCapturadas([]); // Limpia las capturas
+        reiniciarTablero();        // Limpia el tablero
+      } else {
+        console.error("❌ Error al guardar evidencia:", data);
+        alert("Ocurrió un error al enviar la evidencia.");
+      }
+    } catch (error) {
+      console.error("❌ Error de conexión:", error);
+      alert("Error de conexión con el servidor.");
+    }
+  };
+  
 
   // Intervalo para verificar si la actividad sigue activa
   useEffect(() => {
@@ -100,7 +208,7 @@ const Board = () => {
       try {
         const res = await fetch(`http://127.0.0.1:8000/actividades/api/actividad_activa_por_equipo/${codigoEquipo}/`);
         const data = await res.json();
-  
+          
         if (!data.id || data.activo !== true) {
           setActividadActiva(false);
           setAlertaDesactivada(true);
@@ -115,10 +223,24 @@ const Board = () => {
         setCargandoActividad(false); // 👈 ya se terminó de cargar
       }
     }, 5000);
-  
+    console.log("📦 Actividad activa desde localStorage:", actividad);
+    console.log("🖼️ Imágenes ligadas a la actividad:", actividad?.banco_tangrams);
     return () => clearInterval(interval);
   }, [codigoEquipo]);
   
+
+      /// PRUEBA CHUY ///
+      useEffect(() => {
+        // Obtener cantidad de usuarios del equipo desde localStorage
+        const cantidad = localStorage.getItem("cantidadEstudiantes");
+      
+        if (cantidad) {
+          setTotalUsuarios(parseInt(cantidad));
+        }
+      }, []);
+      ///
+  
+
 
   // Redirección automática cuando la actividad es desactivada
   useEffect(() => {
@@ -249,6 +371,49 @@ const handleDragStart = (e, id) => {
 
   const handleDragOver = (e) => e.preventDefault();
 
+    /// PARTE DE CHUY ///
+    const handleListoParaAvanzar = async () => {
+      if (!boardRef.current) return;
+    
+      // 1. Limpiar bordes/sombras para que la captura salga bonita
+      const originalBoxShadow = boardRef.current.style.boxShadow;
+      const originalBorder = boardRef.current.style.border;
+    
+      boardRef.current.style.boxShadow = "none";
+      boardRef.current.style.border = "none";
+    
+      // 2. Capturar imagen limpia
+      const canvas = await html2canvas(boardRef.current);
+      const dataUrl = canvas.toDataURL("image/png");
+    
+      // 3. Restaurar estilos originales
+      boardRef.current.style.boxShadow = originalBoxShadow;
+      boardRef.current.style.border = originalBorder;
+    
+      // 4. Guardar en lista de capturas acumuladas
+      setImagenesCapturadas((prev) => [...prev, dataUrl]);
+    
+      // 5. Verificar si ya es la última imagen
+      if (indiceImagen === IMAGES.length - 1) {
+        alert("¡Actividad finalizada!");
+        await handleFinalizar();
+        setIsPlaying(false);
+        return;
+      }
+    
+      // 6. Notificar al WebSocket que este jugador está listo
+      socket.current?.send(
+        JSON.stringify({
+          tipo: "usuario_listo",
+          usuario: nickname,
+        })
+      );
+    };
+    
+    ///
+
+    
+
   const handleRotate = (id) => {
     if (!isPlaying) return;
     const nuevaRotacion = {
@@ -318,23 +483,37 @@ const handleDragStart = (e, id) => {
             <h1 className="text-2xl font-bold text-center mb-4 text-purple-700 font-comic animate-bounce">
               ¡A Jugar!
             </h1>
+            
+           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 mt-8 bg-white p-2 rounded-xl shadow text-center z-50">
+              <p className="text-sm font-semibold text-purple-800">
+                Figura {indiceImagen + 1} de {IMAGES.length}
+              </p>
+              {IMAGES[indiceImagen] && (
+                <img
+                  src={IMAGES[indiceImagen]}
+                  alt={`Tangram ${indiceImagen + 1}`}
+                  className="w-24 h-24 mx-auto mt-1 border border-green-300 rounded"
+                />
+              )}
+            </div>
+
           </>
         ) : (
           <div className="flex flex-col items-center text-center">
             <h2 className="text-xl font-bold text-blue-800 mb-2 font-comic">
               ¡Bienvenido a la actividad! Recrea esta figura:
             </h2>
-            {IMAGES.length > 0 ? (
+  {/* //// PARTE DE CHUY //// */}
+  {IMAGES.length > 0 && indiceImagen < IMAGES.length ? (
               <img
-                src={IMAGES[0]}
-                alt="Tangram objetivo"
+                src={IMAGES[indiceImagen]}
+                alt={`Tangram ${indiceImagen + 1}`}
                 className="w-64 h-64 border-4 border-green-400 rounded-xl"
               />
             ) : (
-              <p className="text-red-500 font-bold">
-                No hay imagen disponible para esta actividad activa.
-              </p>
+              <p className="text-red-500 font-bold">No hay imagen disponible.</p>
             )}
+
             <button
                   onClick={handleReady}
                   disabled={IMAGES.length === 0}
@@ -344,6 +523,7 @@ const handleDragStart = (e, id) => {
                 >
                   Estoy Listo!
             </button>
+
           </div>
         )}
 
@@ -386,7 +566,35 @@ const handleDragStart = (e, id) => {
          Chat del Equipo
         </h2>
         <ChatRoom teamId={teamId} />
-      </div>
+
+        {isPlaying && (
+    <button
+      onClick={handleListoParaAvanzar}
+      disabled={usuariosListos.includes(nickname)}
+      className={`mt-6 px-6 py-3 text-white text-lg font-bold rounded-full shadow-lg transition ${
+        usuariosListos.includes(nickname)
+          ? "bg-gray-400 cursor-not-allowed"
+          : "bg-blue-500 hover:bg-blue-600"
+      }`}
+    >
+      {indiceImagen === IMAGES.length - 1 ? "Finalizar" : "Siguiente"}
+    </button>
+  )}
+  {usuariosListos.length > 0 && (
+  <div className="mt-2 flex flex-wrap justify-center gap-2">
+    {usuariosListos.map((user, index) => (
+      <span
+        key={index}
+        className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+      >
+        ✅ {user}
+      </span>
+    ))}
+  </div>
+)}
+
+</div>
+      
     </div>
   );
 };
