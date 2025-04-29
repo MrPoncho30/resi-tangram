@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
-
+import Cronometro from "./cronometro";
 import ChatRoom from "./chat/chatRoom";
 
 import SquareSVG from "../../assets/T_cuadrado_rojo.png";
@@ -44,6 +44,9 @@ const Board = () => {
   const [actividadActiva, setActividadActiva] = useState(actividad?.activo === true || actividad?.activo === "true");
   const [alertaDesactivada, setAlertaDesactivada] = useState(false);
   const [cargandoActividad, setCargandoActividad] = useState(true); // 👈 nuevo
+  const [usuariosListosFinalizar, setUsuariosListosFinalizar] = useState([]); // 🔥
+  const [segundosRestantes, setSegundosRestantes] = useState(0);
+
 
   const boardRef = useRef();
   const socket = useRef(null);
@@ -53,6 +56,8 @@ const Board = () => {
   const [indiceImagen, setIndiceImagen] = useState(0); // Imagen actual
   const [usuariosListos, setUsuariosListos] = useState([]); // Quiénes ya dieron clic
   const [totalUsuarios, setTotalUsuarios] = useState(0); // Total del equipo
+  const [usuariosListosInicio, setUsuariosListosInicio] = useState([]);
+
   ///
   const [imagenesCapturadas, setImagenesCapturadas] = useState([]);
 
@@ -70,36 +75,60 @@ const Board = () => {
       socket.current.onopen = () => {
         console.log("Conectado al WebSocket del equipo:", teamId);
       
-        // 🔥 Primero resetea localmente
-        setIndiceImagen(0);
-        setUsuariosListos([]);
-        setImagenesCapturadas([]);
-        setIsPlaying(false);
-        reiniciarTablero();
-      
-        // 🔥 Luego manda mensaje al servidor para reiniciar allá también
+        // // 🔥 Primero resetea localmente
+        // setIndiceImagen(0);
+        // setUsuariosListos([]);
+        // setImagenesCapturadas([]);
+        // setIsPlaying(false);
+        // reiniciarTablero();
+
+
+        //  // 🔥 Luego manda mensaje al servidor para reiniciar allá también
+        //  socket.current.send(
+        //   JSON.stringify({
+        //     tipo: "reiniciar_sesion",
+        //     nickname: nickname,
+        //     teamId: teamId,
+        //   })
+        // );
+
+        // 🔥 Pedimos el estado actual (pieces, rotaciones, índice imagen, usuarios listos)
         socket.current.send(
           JSON.stringify({
-            tipo: "reiniciar_sesion",
+            tipo: "solicitar_estado_actual",
             nickname: nickname,
             teamId: teamId,
           })
         );
       };
-      
-      
+   
   
       socket.current.onmessage = (e) => {
         const data = JSON.parse(e.data);
   
         if (data.tipo === "actualizar_tangram") {
-          const nuevasPiezas = data.estado.pieces;
+          const nuevasPiezas = data.estado.pieces || [];
+          const nuevasRotaciones = data.estado.rotation || {};
+        
           setBoardPieces(nuevasPiezas);
-          setRotation(data.estado.rotation);
-  
+          setRotation(nuevasRotaciones);
+        
           const idsEnTablero = nuevasPiezas.map((p) => p.id);
-          setPiecesState((prev) => prev.filter((p) => !idsEnTablero.includes(p.id)));
-  
+          setPiecesState(PIECES.filter((p) => !idsEnTablero.includes(p.id)));
+        
+          // 🔥 Solo si viene el índice explícitamente lo actualizamos
+          if ("indice" in data.estado) {
+            const nuevoIndice = data.estado.indice || 0;
+            setIndiceImagen(nuevoIndice >= IMAGES.length ? IMAGES.length - 1 : nuevoIndice);
+            setUsuariosListos(data.estado.usuarios_listos || []);
+            setUsuariosListosFinalizar(data.estado.usuarios_listos_finalizar || []);
+            
+            if (nuevasPiezas.length > 0 || nuevoIndice > 0) {
+              setIsPlaying(true);
+            }
+          }
+                
+          
         } else if (data.tipo === "pieza_bloqueada") {
           setBloqueadas((prev) => ({
             ...prev,
@@ -118,12 +147,10 @@ const Board = () => {
         } else if (data.tipo === "usuario_listo") {
           setUsuariosListos(data.usuarios_listos);
   
-          // Verifica si todos los usuarios están listos
           const totalListos = data.usuarios_listos.length;
           if (totalListos === totalUsuarios) {
-            console.log("✅ Todos los usuarios están listos. Enviando cambio de imagen...");
+            console.log("✅ Todos los usuarios están listos. Mandando cambio de imagen...");
   
-            // Solo uno envía el cambio de imagen
             socket.current?.send(
               JSON.stringify({
                 tipo: "cambiar_imagen",
@@ -132,18 +159,83 @@ const Board = () => {
             );
           }
   
+        } else if (data.tipo === "usuario_listo_finalizar") {
+          setUsuariosListosFinalizar(data.usuarios_listos_finalizar);
+  
+        } else if (data.tipo === "todos_finalizar") {
+          console.log("✅ Todos los usuarios finalizaron. Enviando evidencias...");
+  
+          handleFinalizar();
+          setIndiceImagen(0);
+          setUsuariosListos([]);
+          setUsuariosListosFinalizar([]);
+          setImagenesCapturadas([]);
+          reiniciarTablero();
+          setIsPlaying(false);
+  
         } else if (data.tipo === "cambiar_imagen") {
-          const nuevoIndice = data.nuevo_indice;
+          let nuevoIndice = data.nuevo_indice;
+        
+          // 🔥 Validamos que no se pase del máximo
+          if (nuevoIndice >= IMAGES.length) {
+            nuevoIndice = IMAGES.length - 1;
+          }
+        
           setIndiceImagen(nuevoIndice);
           setUsuariosListos([]);
           reiniciarTablero();
-  
+        
           const total = IMAGES.length;
           const restantes = total - (nuevoIndice + 1);
-  
+        
           console.log(`📸 Imagen actual: ${nuevoIndice + 1} de ${total}`);
           console.log(`🧩 Quedan ${restantes} imágenes por mostrar.`);
         }
+        
+        else if (data.tipo === "estado_actual") {
+          if (data.estado) {
+            const estado = data.estado;
+            const nuevoIndice = estado.indice ?? 0;
+        
+            // 🔥 Validamos que no se pase del total de imágenes
+            setIndiceImagen(nuevoIndice >= IMAGES.length ? IMAGES.length - 1 : nuevoIndice);
+        
+            // 🔥 Actualizamos tablero
+            setBoardPieces(estado.pieces || []);
+            setRotation(estado.rotation || {});
+            setUsuariosListos(estado.usuarios_listos || []);
+            setUsuariosListosFinalizar(estado.usuarios_listos_finalizar || []);
+        
+            // 🔥 Actualizamos piezas disponibles (filtro de las que ya están en el tablero)
+            const piezasOcupadasIds = (estado.pieces || []).map(p => p.id);
+            setPiecesState(PIECES.filter(p => !piezasOcupadasIds.includes(p.id)));
+        
+            // 🔥 Y si ya hay piezas colocadas (o sea que ya están jugando), automáticamente ponemos modo juego activo
+            if ((estado.pieces || []).length > 0 || (estado.indice || 0) > 0) {
+              setIsPlaying(true);
+            }
+
+              // 🔥 Si recibimos segundos restantes para el cronometro
+            if (estado.segundos_restantes != null) {
+              setSegundosRestantes(estado.segundos_restantes);
+            }
+
+          }
+        }
+
+        else if (data.tipo === "usuarios_listos_inicio") {
+          setUsuariosListosInicio(data.usuarios_listos_inicio);
+        } 
+        else if (data.tipo === "todos_listos_inicio") {
+          console.log("✅ Todos listos para iniciar partida!");
+        
+          setIsPlaying(true);
+        
+          const totalSegundos = (actividad.horas || 0) * 3600 + (actividad.minutos || 0) * 60 + (actividad.segundos || 0);
+          setSegundosRestantes(totalSegundos);
+        }
+        
+        
       };
     }, 100);
   
@@ -152,7 +244,6 @@ const Board = () => {
       if (socket.current) socket.current.close();
     };
   }, [teamId]);
-  
 
   const handleFinalizar = async () => {
     if (!boardRef.current) return; // Primero verifica que exista el tablero
@@ -191,6 +282,15 @@ const Board = () => {
   
         setImagenesCapturadas([]); // Limpia las capturas
         reiniciarTablero();        // Limpia el tablero
+        
+        // 🔥 Bloquea el retroceso
+        window.history.pushState(null, null, window.location.href);
+        window.addEventListener('popstate', function (event) {
+          window.history.pushState(null, null, window.location.href);
+        });
+
+        navigate("/components/students/loginStudent", { replace: true }); // 🔥 Redirige 
+
       } else {
         console.error("❌ Error al guardar evidencia:", data);
         alert("Ocurrió un error al enviar la evidencia.");
@@ -249,7 +349,15 @@ const Board = () => {
     }
   }, [actividadActiva, alertaDesactivada, navigate]);
 
-  const handleReady = () => setIsPlaying(true);
+  const handleReadyInicio = () => {
+    socket.current?.send(
+      JSON.stringify({
+        tipo: "usuario_listo_inicio",
+        usuario: nickname,
+      })
+    );
+  };
+  
 
   if (cargandoActividad) {
     return (
@@ -393,22 +501,33 @@ const handleDragStart = (e, id) => {
       // 4. Guardar en lista de capturas acumuladas
       setImagenesCapturadas((prev) => [...prev, dataUrl]);
     
-      // 5. Verificar si ya es la última imagen
-      if (indiceImagen === IMAGES.length - 1) {
-        alert("¡Actividad finalizada!");
-        await handleFinalizar();
-        setIsPlaying(false);
-        return;
-      }
-    
-      // 6. Notificar al WebSocket que este jugador está listo
+    // 🔥 Ya no calcules aquí indiceImagen + 1. Solo notificas "estoy listo"
+    if (indiceImagen === IMAGES.length - 1) {
+      socket.current?.send(
+        JSON.stringify({
+          tipo: "usuario_listo_finalizar",
+          usuario: nickname,
+        })
+      );
+    } else {
       socket.current?.send(
         JSON.stringify({
           tipo: "usuario_listo",
           usuario: nickname,
         })
       );
+    }
     };
+
+    // Inmediatamente después pon:
+const handleListoParaFinalizar = () => {
+  socket.current?.send(
+    JSON.stringify({
+      tipo: "usuario_listo_finalizar",
+      usuario: nickname,
+    })
+  );
+};
     
     ///
 
@@ -515,7 +634,7 @@ const handleDragStart = (e, id) => {
             )}
 
             <button
-                  onClick={handleReady}
+                  onClick={handleReadyInicio}
                   disabled={IMAGES.length === 0}
                   className={`mt-4 px-6 py-3 text-white text-lg font-bold rounded-full shadow-lg transition ${
                     IMAGES.length > 0 ? "bg-green-500 hover:bg-green-600" : "bg-gray-400 cursor-not-allowed"
@@ -523,6 +642,19 @@ const handleDragStart = (e, id) => {
                 >
                   Estoy Listo!
             </button>
+            {usuariosListosInicio.length > 0 && (
+                <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  {usuariosListosInicio.map((user, index) => (
+                    <span
+                      key={index}
+                      className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                    >
+                      ✅ {user}
+                    </span>
+                  ))}
+                </div>
+              )}
+
 
           </div>
         )}
@@ -568,17 +700,24 @@ const handleDragStart = (e, id) => {
         <ChatRoom teamId={teamId} />
 
         {isPlaying && (
-    <button
-      onClick={handleListoParaAvanzar}
-      disabled={usuariosListos.includes(nickname)}
-      className={`mt-6 px-6 py-3 text-white text-lg font-bold rounded-full shadow-lg transition ${
-        usuariosListos.includes(nickname)
-          ? "bg-gray-400 cursor-not-allowed"
-          : "bg-blue-500 hover:bg-blue-600"
-      }`}
-    >
-      {indiceImagen === IMAGES.length - 1 ? "Finalizar" : "Siguiente"}
-    </button>
+ <button
+ onClick={indiceImagen === IMAGES.length - 1 ? handleListoParaFinalizar : handleListoParaAvanzar}
+ disabled={
+   indiceImagen === IMAGES.length - 1
+     ? usuariosListosFinalizar.includes(nickname)
+     : usuariosListos.includes(nickname)
+ }
+ className={`mt-6 px-6 py-3 text-white text-lg font-bold rounded-full shadow-lg transition ${
+   (indiceImagen === IMAGES.length - 1
+     ? usuariosListosFinalizar.includes(nickname)
+     : usuariosListos.includes(nickname))
+     ? "bg-gray-400 cursor-not-allowed"
+     : "bg-blue-500 hover:bg-blue-600"
+ }`}
+>
+ {indiceImagen === IMAGES.length - 1 ? "Finalizar" : "Siguiente"}
+</button>
+
   )}
   {usuariosListos.length > 0 && (
   <div className="mt-2 flex flex-wrap justify-center gap-2">
@@ -593,8 +732,18 @@ const handleDragStart = (e, id) => {
   </div>
 )}
 
+{isPlaying && segundosRestantes !== null && (
+  <div className="mt-4">
+    <Cronometro 
+      segundosIniciales={segundosRestantes} 
+      onTiempoTerminado={handleFinalizar}
+    />
+  </div>
+)}
+
+
 </div>
-      
+
     </div>
   );
 };
