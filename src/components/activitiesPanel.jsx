@@ -316,9 +316,6 @@ console.log('datos enviando si o si', (nuevaActividad))
       console.error('Error al actualizar la actividad:', error);
     }
   };
-  
-  
-  
 
   useEffect(() => {
     const fetchActividades = async () => {

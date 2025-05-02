@@ -229,6 +229,12 @@ const Navbar = () => {
           <FaChalkboardTeacher className="mr-3" />
           <Link to="/activitiesPanel">Actividades</Link>
         </li>
+
+        <li className={`p-3 rounded-lg cursor-pointer flex items-center transition-all duration-300 
+          ${location.pathname === "/evidencias" ? "bg-gray-800 text-white" : "hover:bg-gray-200"}`}>
+          <FaChalkboardTeacher className="mr-3" />
+          <Link to="/evidencias">Evidencias</Link>
+        </li>
       </ul>
 
       {/* Botón de salir */}

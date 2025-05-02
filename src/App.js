@@ -7,6 +7,8 @@ import LoginTeacher from './components/loginTeacher';
 import Salones from './components/salones';
 import ClassroomStudents from './components/classroom_students';
 import ActivitiesPanel from './components/activitiesPanel';
+import Evidencias from './components/evidencias';
+import EvidenciaScreen from './components/evidenciaScreen';
 
 // Componentes del ESTUDIANTE
 import Login from "./components/students/loginStudent"; // Login de estudiante
@@ -44,6 +46,10 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/salon/:id/alumnos" element={<ClassroomStudents />} />
         <Route path="/activitiesPanel" element={<ActivitiesPanel />} />
+        <Route path="/evidencias" element={<Evidencias />} />
+        <Route path="/evidencia/:id" element={<EvidenciaScreen />} />
+
+
 
         {/* Ruta para el login del estudiante que redirige a Board directamente */}
         <Route path="/components/students/loginStudent" element={<LoginWrapper />} />

@@ -13,6 +13,10 @@ const Dashboard = () => {
     navigate('../activitiesPanel')
   };
 
+  const handleEvidencias =() => {
+    navigate('../evidencias')
+  };
+
   // return (
   //   <div className="min-h-screen bg-gray-100 flex">
   //     <Navbar />
@@ -77,6 +81,21 @@ const Dashboard = () => {
             <div className="mt-4 flex justify-center">
               <button
                 onClick={handleActivities}
+                className="w-40 bg-gray-800 text-white py-2 px-4 rounded-lg font-semibold hover:bg-gray-700 transition-all duration-300"
+              >
+                Ver más
+              </button>
+            </div>
+          </div>
+
+
+           {/* Tarjeta de Evidencias */}
+           <div className="bg-white bg-opacity-80 p-6 rounded-xl shadow-lg backdrop-blur-md border border-gray-300">
+            <h2 className="text-xl font-semibold text-gray-700 mb-3">Evidencias</h2>
+            <p className="text-gray-600">Consulta y gestiona las evidencias.</p>
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={handleEvidencias}
                 className="w-40 bg-gray-800 text-white py-2 px-4 rounded-lg font-semibold hover:bg-gray-700 transition-all duration-300"
               >
                 Ver más

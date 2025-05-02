@@ -12,6 +12,9 @@ import TrianglePurpleSVG from "../../assets/T_triangulo_morado.png";
 import TrianglePinkSVG from "../../assets/T_triangulo_rosa.png";
 import TriangleGreenSVG from "../../assets/T_triangulo_verde.png";
 
+import CargandoActividad from "./loadingScreen";
+import musicaFondo from "../../assets/audio/musica-fondo.mp3"; 
+
 const PIECES = [
   { id: 0, image: TriangleYellowSVG },
   { id: 1, image: TriangleBlueSVG },
@@ -360,13 +363,7 @@ const Board = () => {
   
 
   if (cargandoActividad) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <h2 className="text-2xl text-blue-600 font-bold text-center">
-          Cargando actividad...
-        </h2>
-      </div>
-    );
+    return <CargandoActividad />;
   }
   
   if (!actividadActiva && alertaDesactivada) {
@@ -643,17 +640,17 @@ const handleListoParaFinalizar = () => {
                   Estoy Listo!
             </button>
             {usuariosListosInicio.length > 0 && (
-                <div className="mt-2 flex flex-wrap justify-center gap-2">
-                  {usuariosListosInicio.map((user, index) => (
-                    <span
-                      key={index}
-                      className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
-                    >
-                      ✅ {user}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
+                {usuariosListosInicio.map((user, index) => (
+                  <span
+                    key={index}
+                    className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                  >
+                    ✅ {user}
+                  </span>
+                ))}
+              </div>
+            )}
 
 
           </div>
@@ -744,6 +741,11 @@ const handleListoParaFinalizar = () => {
 
 </div>
 
+
+<audio autoPlay loop>
+      <source src={musicaFondo} type="audio/mpeg" />
+      Tu navegador no soporta el elemento de audio.
+    </audio>
     </div>
   );
 };
