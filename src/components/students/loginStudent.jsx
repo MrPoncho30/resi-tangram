@@ -1,9 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import myLogo from '../../assets/logo_tan.png';
 import fondo from '../../assets/fondo.png'; 
-
 
 function LoginStudent({ onJoin }) {
   const [teamCode, setTeamCode] = useState("");
@@ -37,7 +35,7 @@ function LoginStudent({ onJoin }) {
           setIsCodeValidated(true);
           setError("");
 
-             // Guardar cantidad de estudiantes en localStorage
+          // Guardar cantidad de estudiantes en localStorage
           localStorage.setItem("cantidadEstudiantes", data.estudiantes.length.toString());
           console.log("ESTUDIANTES OBTENIDOS: ", data.estudiantes);
         } else {
@@ -52,7 +50,16 @@ function LoginStudent({ onJoin }) {
   };
 
   const fetchActiveActivity = async () => {
-    if (!teamCode) return;
+    if (!teamCode || !selectedNickname) return;
+
+    const estudianteSeleccionado = teamMembers.find(
+      (m) => m.nickname === selectedNickname
+    );
+
+    if (!estudianteSeleccionado) {
+      setError("Estudiante no encontrado.");
+      return;
+    }
 
     try {
       const response = await fetch(`http://127.0.0.1:8000/actividades/api/actividad_activa_por_equipo/${teamCode}/`);
@@ -62,11 +69,19 @@ function LoginStudent({ onJoin }) {
 
       if (response.ok && data.id && isActive) {
         console.log("Datos de actividad activa:", data);
-        navigate("/components/game/board", { state: { actividad: data, nickname: selectedNickname, studentName: selectedNickname, equipo: equipoInfo, teamCode } });
+        navigate("/components/game/board", {
+          state: {
+            actividad: data,
+            nickname: estudianteSeleccionado.nickname,
+            studentName: estudianteSeleccionado.nombre,
+            studentId: estudianteSeleccionado.id,
+            equipo: equipoInfo,
+            teamCode,
+          },
+        });
       } else {
         setError(data.mensaje || "No hay actividades activas por el momento.");
       }
-
     } catch (err) {
       setError("Error al obtener la actividad activa.");
     }
@@ -87,17 +102,14 @@ function LoginStudent({ onJoin }) {
       setError("Por favor, selecciona un nickname.");
       return;
     }
-  
-    // 🧠 Guardar nickname en sessionStorage para que esté disponible en toda la sesión
+
     sessionStorage.setItem("nickname", selectedNickname);
-  
-    // También puedes guardar el código del equipo si lo usas después
     sessionStorage.setItem("teamCode", teamCode);
-  
+
     onJoin(selectedNickname, teamCode);
     fetchActiveActivity();
   };
-  
+
   useEffect(() => {
     localStorage.removeItem("cantidadEstudiantes");
     localStorage.removeItem("teamCode");
@@ -105,26 +117,18 @@ function LoginStudent({ onJoin }) {
     localStorage.removeItem("teamName");
     localStorage.removeItem("nickname");
     localStorage.removeItem("studentName");
-    localStorage.removeItem("actividad"); // 🔥 agrega esta
     sessionStorage.clear();
     console.log("🔍 LocalStorage después de limpieza:", { ...localStorage });
     console.log("🔍 SessionStorage después de limpieza:", { ...sessionStorage });
   }, []);
-  
-  
-  
-  
 
   return (
-      <div
-          className="relative flex h-screen items-center justify-center bg-cover bg-center"
-          style={{ backgroundImage: `url(${fondo})` }}
-      >
-         {/* Overlay negro */}
-  <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
-
-{/* Contenido encima del overlay */}
-        <div className="bg-white p-8 rounded-3xl shadow-lg w-96 text-center relative overflow-hidden">
+    <div
+      className="relative flex h-screen items-center justify-center bg-cover bg-center"
+      style={{ backgroundImage: `url(${fondo})` }}
+    >
+      <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
+      <div className="bg-white p-8 rounded-3xl shadow-lg w-96 text-center relative overflow-hidden">
         <div className="flex justify-center mb-4">
           <img src={myLogo} alt="Logo" className="h-14 w-14" />
         </div>

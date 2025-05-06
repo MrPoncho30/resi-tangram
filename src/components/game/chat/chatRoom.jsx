@@ -102,7 +102,7 @@ const ChatRoom = () => {
   return (
     <div className="w-full h-[500px] flex flex-col bg-white rounded-lg shadow-lg p-4">
       <h2 className="text-2xl font-semibold text-center mb-4">
-        Chat de Equipo ({teamName})
+        "{teamName}"
       </h2>
 
       <div className="flex-1 overflow-y-auto p-2 mb-4 bg-gray-100 rounded-lg max-h-[400px]">
