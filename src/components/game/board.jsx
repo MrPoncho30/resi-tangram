@@ -174,15 +174,8 @@ const Board = () => {
   
         } else if (data.tipo === "todos_finalizar") {
           console.log("✅ Todos los usuarios finalizaron. Enviando evidencias...");
-            console.log("✅ Todos los usuarios finalizaron. Enviando evidencias...");
-          
-            // SOLO el primero que llegue debe guardar
-            if (!window.evidenciaEnviada) {
-              window.evidenciaEnviada = true;
-              handleFinalizar();
-            }
-          
-          
+  
+          handleFinalizar();
           setIndiceImagen(0);
           setUsuariosListos([]);
           setUsuariosListosFinalizar([]);
@@ -262,6 +255,7 @@ const Board = () => {
     };
   }, [teamId]);
 
+
   const handleFinalizar = async () => {
     if (!boardRef.current) return;
     
@@ -291,6 +285,7 @@ const Board = () => {
         body: JSON.stringify({
           actividad_id: actividad.id,
           equipo_id: teamId,
+          codigo_sesion: codigoEquipo, // 👈 Agrega esto
           imagenes: imagenesAEnviar,
         }),
       });
