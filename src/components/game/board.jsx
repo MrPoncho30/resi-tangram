@@ -173,17 +173,23 @@ const Board = () => {
           setUsuariosListosFinalizar(data.usuarios_listos_finalizar);
   
         } else if (data.tipo === "todos_finalizar") {
-          console.log("✅ Todos los usuarios finalizaron. Enviando evidencias...");
-  
-          handleFinalizar();
+          console.log("✅ Todos finalizaron.");
+        
+          if (data.ultimo_en_finalizar === nickname) {
+            console.log("🧠 Yo soy el último. Ejecutando handleFinalizar()");
+            handleFinalizar();  // Solo uno lo hace
+          }
+        
+          // Todos limpian el tablero y sesión visual
           setIndiceImagen(0);
           setUsuariosListos([]);
           setUsuariosListosFinalizar([]);
           setImagenesCapturadas([]);
           reiniciarTablero();
           setIsPlaying(false);
-  
-        } else if (data.tipo === "cambiar_imagen") {
+        }
+        
+         else if (data.tipo === "cambiar_imagen") {
           let nuevoIndice = data.nuevo_indice;
         
           // 🔥 Validamos que no se pase del máximo
@@ -245,6 +251,11 @@ const Board = () => {
           setSegundosRestantes(totalSegundos);
         }
         
+        else if (data.tipo === "salir_al_login") {
+          console.log("🚪 Redirigiendo al login desde broadcast...");
+          navigate("/components/students/loginStudent", { replace: true });
+        }
+        
         
       };
     }, 100);
@@ -258,21 +269,21 @@ const Board = () => {
 
   const handleFinalizar = async () => {
     if (!boardRef.current) return;
-    
+  
     try {
       const originalBoxShadow = boardRef.current.style.boxShadow;
       const originalBorder = boardRef.current.style.border;
-
+  
       boardRef.current.style.boxShadow = "none";
       boardRef.current.style.border = "none";
-
+  
       const canvas = await html2canvas(boardRef.current);
       const dataUrl = canvas.toDataURL("image/png");
   
       boardRef.current.style.boxShadow = originalBoxShadow;
       boardRef.current.style.border = originalBorder;
-
-      const imagenesAEnviar = [...imagenesRef.current, dataUrl]; // ✅ Se envían todas
+  
+      const imagenesAEnviar = [...imagenesRef.current, dataUrl];
   
       if (imagenesAEnviar.length === 0) {
         alert("No hay imágenes que enviar.");
@@ -285,7 +296,7 @@ const Board = () => {
         body: JSON.stringify({
           actividad_id: actividad.id,
           equipo_id: teamId,
-          codigo_sesion: codigoEquipo, // 👈 Agrega esto
+          codigo_sesion: codigoEquipo, // 👈 Necesario para el backend
           imagenes: imagenesAEnviar,
         }),
       });
@@ -297,23 +308,21 @@ const Board = () => {
         alert("Evidencia enviada con éxito 🎉");
   
         const evidenciaId = data.evidencia_id;
-
+  
         socket.current?.send(
           JSON.stringify({
             tipo: "registrar_evidencia",
             evidencia_id: evidenciaId,
-            nickname: nickname, 
+            nickname: nickname,
           })
         );
-
-
+  
         setImagenesCapturadas([]);
-        imagenesRef.current = []; // ✅ Limpiar referencia
+        imagenesRef.current = [];
         reiniciarTablero();
   
-        // 🔒 Bloqueo de retroceso
         window.history.pushState(null, null, window.location.href);
-        window.addEventListener('popstate', function () {
+        window.addEventListener("popstate", function () {
           window.history.pushState(null, null, window.location.href);
         });
   
@@ -327,6 +336,7 @@ const Board = () => {
       alert("Error de conexión con el servidor.");
     }
   };
+  
   
   
 
