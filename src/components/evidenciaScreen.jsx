@@ -29,41 +29,53 @@ const EvidenciaScreen = () => {
   const [imagenesOriginales, setImagenesOriginales] = useState([]);
   const [imagenesEvidencia, setImagenesEvidencia] = useState([]);
   const [equipo, setEquipo] = useState(null);
+  const [estadisticas, setEstadisticas] = useState([]);
 
   useEffect(() => {
     const fetchEvidencia = async () => {
       try {
-        const token = localStorage.getItem('accessToken');
+        const token = localStorage.getItem('accessToken'); // 🔐 Asegura que tienes el token guardado
+        if (!token) {
+          console.warn("⚠️ No se encontró token en localStorage.");
+          return;
+        }
+  
         const res = await fetch(`http://127.0.0.1:8000/evidencias/api/informacion_completa_evidencia/${id}/`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
         });
-
+  
         const data = await res.json();
-        console.log(data); // <-- Asegúrate de que esto esté aquí
-
+        console.log("📊 Datos completos:", data);
+  
         setImagenesOriginales(data.imagenes_originales || []);
         setImagenesEvidencia(data.imagenes_evidencia || []);
         setEquipo(data.equipo || null);
+        setEstadisticas(data.estadisticas || []);
       } catch (err) {
-        console.error('Error al obtener los datos de la evidencia:', err);
+        console.error('❌ Error al obtener los datos de la evidencia:', err);
       }
     };
-
+  
     fetchEvidencia();
   }, [id]);
+  
 
   const radarData = {
     labels: ['Movimientos', 'Mensajes', 'Respuestas'],
-    datasets: equipo?.estudiantes?.map((est, i) => ({
-      label: est.nickname || est.nombre,
+    datasets: estadisticas.map((est) => ({
+      label: est.nombre_estudiante, 
       data: [
-        Math.floor(Math.random() * 100),
-        Math.floor(Math.random() * 100),
-        Math.floor(Math.random() * 100)
+        est.piezas_movidas || 0,
+        est.mensajes_enviados || 0,
+        est.respuestas_enviadas || 0,
       ],
       fill: true,
-    })) || [],
+    })),
   };
+  
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -77,9 +89,8 @@ const EvidenciaScreen = () => {
         </div>
 
         <div className="grid grid-cols-3 gap-6">
-          {/* Imagenes originales */}
           <div className="bg-white p-4 rounded shadow">
-            <h2 className="text-lg font-semibold mb-2 ">Tangrams Originales</h2>
+            <h2 className="text-lg font-semibold mb-2">Tangrams Originales</h2>
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
               {imagenesOriginales.map((url, idx) => (
                 <img key={idx} src={url} alt={`Original ${idx}`} className="w-full rounded" />
@@ -87,37 +98,29 @@ const EvidenciaScreen = () => {
             </div>
           </div>
 
-          {/* Capturas de evidencia */}
           <div className="bg-white p-4 rounded shadow">
             <h2 className="text-lg font-semibold mb-2">Capturas del Equipo</h2>
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
-            {imagenesEvidencia.map((img, idx) => {
-  console.log('imagen evidencia:', img); // <-- AGREGAR ESTO
-
-  return (
-    <img
-      key={idx}
-      src={img.imagen_url}
-      alt={`Evidencia ${idx}`}
-      className="w-full mb-2 rounded border"
-    />
-  );
-})}
-
+              {imagenesEvidencia.map((img, idx) => (
+                <img key={idx} src={img.imagen_url} alt={`Evidencia ${idx}`} className="w-full mb-2 rounded border" />
+              ))}
             </div>
           </div>
 
-          {/* Gráfico + equipo */}
           <div className="bg-white p-4 rounded shadow flex flex-col items-center">
             <h2 className="text-lg font-semibold mb-4">Rendimiento del Equipo</h2>
             <div className="w-full h-72">
-              <Radar data={radarData} />
+              {estadisticas.length > 0 ? (
+                <Radar data={radarData} />
+              ) : (
+                <p className="text-sm text-gray-500 text-center">No hay datos disponibles.</p>
+              )}
             </div>
             <div className="mt-4">
               <h3 className="text-sm font-bold mb-2 text-center">Integrantes</h3>
-              <ul className="text-center">
+              <ul className="text-center text-sm">
                 {equipo?.estudiantes?.map((est) => (
-                  <li key={est.id}>{est.nickname || est.nombre}</li>
+                  <li key={est.id}>{est.nombre}</li>
                 ))}
               </ul>
             </div>

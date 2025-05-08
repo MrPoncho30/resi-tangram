@@ -66,7 +66,12 @@ const Board = () => {
   ///
   const [imagenesCapturadas, setImagenesCapturadas] = useState([]);
 
-
+  useEffect(() => {
+    console.log("🧑‍🎓 Datos del estudiante:");
+    console.log("ID:", location.state?.studentId);
+    console.log("Nombre:", location.state?.studentName);
+    console.log("Nickname:", location.state?.nickname);
+  }, []);
   // const actividadActiva = actividad?.activo === true || actividad?.activo === "true";
   const reiniciarTablero = () => {
     setBoardPieces([]);
@@ -169,8 +174,15 @@ const Board = () => {
   
         } else if (data.tipo === "todos_finalizar") {
           console.log("✅ Todos los usuarios finalizaron. Enviando evidencias...");
-  
-          handleFinalizar();
+            console.log("✅ Todos los usuarios finalizaron. Enviando evidencias...");
+          
+            // SOLO el primero que llegue debe guardar
+            if (!window.evidenciaEnviada) {
+              window.evidenciaEnviada = true;
+              handleFinalizar();
+            }
+          
+          
           setIndiceImagen(0);
           setUsuariosListos([]);
           setUsuariosListosFinalizar([]);
@@ -250,15 +262,6 @@ const Board = () => {
     };
   }, [teamId]);
 
-// 🟢 Aquí imprime la info del jugador
-useEffect(() => {
-  console.log("🧑‍🎓 Datos del estudiante:");
-  console.log("ID:", location.state?.studentId);
-  console.log("Nombre:", location.state?.studentName);
-  console.log("Nickname:", location.state?.nickname);
-}, []);
-
-
   const handleFinalizar = async () => {
     if (!boardRef.current) return;
     
@@ -298,6 +301,17 @@ useEffect(() => {
         console.log("✅ Evidencia enviada:", data);
         alert("Evidencia enviada con éxito 🎉");
   
+        const evidenciaId = data.evidencia_id;
+
+        socket.current?.send(
+          JSON.stringify({
+            tipo: "registrar_evidencia",
+            evidencia_id: evidenciaId,
+            nickname: nickname, 
+          })
+        );
+
+
         setImagenesCapturadas([]);
         imagenesRef.current = []; // ✅ Limpiar referencia
         reiniciarTablero();
@@ -485,6 +499,7 @@ const handleDragStart = (e, id) => {
             pieces: nuevasPiezas,
             rotation,
           },
+          usuario: nickname
         })
       );
     }
@@ -536,7 +551,6 @@ const handleListoParaFinalizar = () => {
     
     ///
 
-    
 
   const handleRotate = (id) => {
     if (!isPlaying) return;
@@ -553,6 +567,8 @@ const handleListoParaFinalizar = () => {
           pieces: boardPieces,
           rotation: nuevaRotacion,
         },
+        usuario: nickname
+
       })
     );
   };
