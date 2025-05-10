@@ -169,8 +169,9 @@ const Board = () => {
             );
           }
   
-        } else if (data.tipo === "usuario_listo_finalizar") {
-          setUsuariosListosFinalizar(data.usuarios_listos_finalizar);
+        } else if (data.tipo === "usuarios_listos_finalizar") {
+  setUsuariosListosFinalizar(data.usuarios_listos_finalizar);
+
   
         } else if (data.tipo === "todos_finalizar") {
           console.log("✅ Todos finalizaron.");
@@ -661,15 +662,30 @@ const handleListoParaFinalizar = () => {
               ) : (
                 <p className="text-red-500 font-bold">No hay imagen disponible.</p>
               )}
-              <button
-                onClick={handleReadyInicio}
-                disabled={IMAGES.length === 0}
-                className={`mt-4 px-6 py-3 text-white text-lg font-bold rounded-full shadow-lg transition ${
-                  IMAGES.length > 0 ? "bg-green-500 hover:bg-green-600" : "bg-gray-400 cursor-not-allowed"
-                }`}
-              >
-                Estoy Listo!
-              </button>
+ <button
+  onClick={handleReadyInicio}
+  disabled={usuariosListosInicio.includes(nickname) || IMAGES.length === 0}
+  className={`mt-4 px-6 py-3 text-white text-lg font-bold rounded-full shadow-lg transition ${
+    usuariosListosInicio.includes(nickname) || IMAGES.length === 0
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-green-500 hover:bg-green-600"
+  }`}
+>
+  Estoy Listo!
+</button>
+{usuariosListosInicio.length > 0 && (
+  <div className="mt-3 flex flex-wrap justify-center gap-2">
+    {usuariosListosInicio.map((user, index) => (
+      <span
+        key={index}
+        className="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+      >
+        ✅ {user}
+      </span>
+    ))}
+  </div>
+)}
+
             </div>
           )}
   
@@ -749,6 +765,20 @@ const handleListoParaFinalizar = () => {
                 ))}
               </div>
             )}
+
+            {indiceImagen === IMAGES.length - 1 && usuariosListosFinalizar.length > 0 && (
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                {usuariosListosFinalizar.map((user, index) => (
+                  <span
+                    key={index}
+                    className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                  >
+                    ✅ {user}
+                  </span>
+                ))}
+              </div>
+            )}
+
   
             {isPlaying && segundosRestantes !== null && (
               <div className="mt-4">

@@ -665,11 +665,13 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                           Ver equipo
                         </button>                        <button
                           onClick={() => handleAsignarAlumnosClick(equipo.id)}
-                          className="py-1 px-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                          className="py-1 px-2 mr-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                         >
                           Asignar Alumnos
                         </button>
-                        <button className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">Editar</button>
+                        <button className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">
+                          Editar
+                          </button>
                         <button 
                           onClick={() => handleDeleteEquipo(equipo.id)} 
                           className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"

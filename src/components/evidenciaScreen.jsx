@@ -31,6 +31,25 @@ const EvidenciaScreen = () => {
   const [equipo, setEquipo] = useState(null);
   const [estadisticas, setEstadisticas] = useState([]);
 
+  const colores = [
+    'rgba(255, 99, 132, 0.5)',   // Rojo
+    'rgba(54, 162, 235, 0.5)',   // Azul
+    'rgba(255, 206, 86, 0.5)',   // Amarillo
+    'rgba(75, 192, 192, 0.5)',   // Verde agua
+    'rgba(153, 102, 255, 0.5)',  // Morado
+    'rgba(255, 159, 64, 0.5)',   // Naranja
+  ];
+
+const totalStats = estadisticas.reduce(
+  (acum, est) => {
+    acum.movimientos += est.piezas_movidas || 0;
+    acum.mensajes += est.mensajes_enviados || 0;
+    acum.respuestas += est.respuestas_enviadas || 0;
+    return acum;
+  },
+  { movimientos: 0, mensajes: 0, respuestas: 0 }
+);
+
   useEffect(() => {
     const fetchEvidencia = async () => {
       try {
@@ -63,19 +82,42 @@ const EvidenciaScreen = () => {
   }, [id]);
   
 
-  const radarData = {
-    labels: ['Movimientos', 'Mensajes', 'Respuestas'],
-    datasets: estadisticas.map((est) => ({
-      label: est.nombre_estudiante, 
+const radarData = {
+  labels: ['Movimientos', 'Mensajes', 'Respuestas'],
+  datasets: [
+    ...estadisticas.map((est, index) => ({
+      label: est.nombre_estudiante,
       data: [
         est.piezas_movidas || 0,
         est.mensajes_enviados || 0,
         est.respuestas_enviadas || 0,
       ],
       fill: true,
+      backgroundColor: colores[index % colores.length],
+      borderColor: colores[index % colores.length].replace('0.5', '1'),
+      pointBackgroundColor: colores[index % colores.length].replace('0.5', '1'),
+      pointBorderColor: '#fff',
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: colores[index % colores.length].replace('0.5', '1'),
     })),
-  };
-  
+    {
+      label: 'General del equipo',
+      data: [
+        totalStats.movimientos,
+        totalStats.mensajes,
+        totalStats.respuestas,
+      ],
+      fill: true,
+      backgroundColor: 'rgba(0, 128, 0, 0.2)',
+      borderColor: 'rgba(0, 128, 0, 1)',
+      pointBackgroundColor: 'rgba(0, 128, 0, 1)',
+      pointBorderColor: '#fff',
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: 'rgba(0, 128, 0, 1)',
+    },
+  ],
+};
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -109,7 +151,7 @@ const EvidenciaScreen = () => {
 
           <div className="bg-white p-4 rounded shadow flex flex-col items-center">
             <h2 className="text-lg font-semibold mb-4">Rendimiento del Equipo</h2>
-            <div className="w-full h-72">
+            <div className="flex justify-center items-center w-full h-[400px]">
               {estadisticas.length > 0 ? (
                 <Radar data={radarData} />
               ) : (
