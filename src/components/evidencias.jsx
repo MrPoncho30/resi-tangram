@@ -129,6 +129,35 @@ const Evidencias = () => {
   const evidenciasAMostrar = evidencias.slice(indiceInicio, indiceFin);
   const totalPaginas = Math.ceil(evidencias.length / evidenciasPorPagina);
 
+
+  const handleEliminarEvidencia = async (evidenciaId) => {
+  const confirmDelete = window.confirm("¿Estás seguro de que quieres eliminar esta evidencia?");
+  if (!confirmDelete) return;
+
+  try {
+    const token = localStorage.getItem("accessToken");
+    const response = await fetch(`http://127.0.0.1:8000/evidencias/api/eliminar_evidencia/${evidenciaId}/`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.status === 204) {
+      alert("✅ Evidencia eliminada correctamente.");
+      // Aquí puedes actualizar tu estado si estás listando evidencias
+    } else {
+      const data = await response.json();
+      alert(`❌ Error al eliminar: ${data.error || "Ocurrió un error."}`);
+    }
+  } catch (error) {
+    console.error("❌ Error de red:", error);
+    alert("No se pudo conectar con el servidor.");
+  }
+};
+
+
   return (
     <div className="min-h-screen bg-gray-100 flex">
       <Navbar />
@@ -254,8 +283,13 @@ const Evidencias = () => {
                     className="bg-green-500 text-white px-2 py-1 rounded mr-2">
                       Ver
                     </button>
-                    <button className="bg-red-500 text-white px-2 py-1 rounded mr-2">Eliminar</button>
-                    <button className="bg-gray-700 text-white px-2 py-1 rounded">PDF</button>
+<button
+  className="bg-red-500 text-white px-2 py-1 rounded mr-2"
+  onClick={() => handleEliminarEvidencia(ev.id)}
+>
+  Eliminar
+</button>
+
                   </td>
                 </tr>
               ))

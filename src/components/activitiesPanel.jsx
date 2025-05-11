@@ -29,6 +29,22 @@ const ActivitiesPanel = () => {
   const [selectedActivityId, setSelectedActivityId] = useState(null);
   const imagesPerPage = 4;
 
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [actividadAEditar, setActividadAEditar] = useState(null);
+
+  const abrirModalEditar = (actividad) => {
+    setActividadAEditar({ ...actividad });
+    setShowEditModal(true);
+  };
+
+  const cerrarModalEditar = () => {
+    setActividadAEditar(null);
+    setShowEditModal(false);
+  };
+
+  const [showVerModal, setShowVerModal] = useState(false);
+  const [actividadAVer, setActividadAVer] = useState(null);
+
   const bancoTangrams = [
     buitre,
     caballo,
@@ -196,6 +212,43 @@ console.log('datos enviando si o si', (nuevaActividad))
     }
   };
   
+const handleEditarActividad = async (actividad) => {
+  try {
+    const accessToken = localStorage.getItem('accessToken');
+      
+      if (!accessToken) {
+        console.error('No se encontró el token de acceso.');
+        return;
+      }
+    const response = await fetch(`http://127.0.0.1:8000/actividades/api/editar_actividad/${actividad.id}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        nombre: actividad.nombre,
+        horas: actividad.horas,
+        minutos: actividad.minutos,
+        segundos: actividad.segundos,
+        banco_tangrams: actividad.banco_tangrams,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log("✅ Actividad editada con éxito:", data);
+      alert("Actividad actualizada.");
+    } else {
+      console.error("❌ Error al editar:", data);
+      alert(data.error || "Error al editar la actividad.");
+    }
+  } catch (err) {
+    console.error("❌ Error de red:", err);
+    alert("No se pudo conectar con el servidor.");
+  }
+};
 
   const handleImageSelect = (imagen) => {
     setNewActivity(prev => ({
@@ -468,8 +521,8 @@ console.log('datos enviando si o si', (nuevaActividad))
 
     </td>
           <td className="border p-2">
-            <button onClick={() => console.log('Ver actividad', actividad)} className="bg-blue-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-blue-700">Ver</button>
-            <button onClick={() => console.log('Editar actividad', actividad)} className="bg-yellow-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-yellow-700">Editar</button>
+            <button onClick={() => { setActividadAVer(actividad); setShowVerModal(true);}} className="bg-blue-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-blue-700">Ver</button>
+            <button onClick={() => abrirModalEditar(actividad)} className="bg-yellow-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-yellow-700">Editar</button>
             <button onClick={() => handleEliminarActividad(actividad.id)} className="bg-red-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-red-700">Eliminar</button>
             <button onClick={() => handleAssignToClass(actividad.id)} className="bg-green-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-green-700">Asignar a</button>
           </td>
@@ -484,8 +537,6 @@ console.log('datos enviando si o si', (nuevaActividad))
     )}
   </tbody>
 </table>
-
-
 
        {/* Modal Asignar a */}
        {showAssignModal && (
@@ -524,6 +575,122 @@ console.log('datos enviando si o si', (nuevaActividad))
           </div>
         </div>
       )}
+
+      {showEditModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
+      <h2 className="text-xl font-bold mb-4">Editar Actividad</h2>
+
+      <label className="block mb-2">
+        Nombre:
+        <input
+          type="text"
+          value={actividadAEditar?.nombre || ""}
+          onChange={(e) => setActividadAEditar({ ...actividadAEditar, nombre: e.target.value })}
+          className="border p-2 w-full rounded-md"
+        />
+      </label>
+
+      <div className="flex gap-2 mb-4">
+        <span className="text-sm text-gray-600 mt-1">hh</span>
+
+        <input
+          type="number"
+          placeholder="Horas"
+          min="0"
+          value={actividadAEditar?.horas || 0}
+          onChange={(e) => setActividadAEditar({ ...actividadAEditar, horas: parseInt(e.target.value) })}
+          className="border p-2 rounded-md w-1/3"
+        />
+        <span className="text-sm text-gray-600 mt-1">mm</span>
+
+        <input
+          type="number"
+          placeholder="Min"
+          min="0"
+          max="59"
+          value={actividadAEditar?.minutos || 0}
+          onChange={(e) => setActividadAEditar({ ...actividadAEditar, minutos: parseInt(e.target.value) })}
+          className="border p-2 rounded-md w-1/3"
+        />
+        <span className="text-sm text-gray-600 mt-1">ss</span>
+        <input
+          type="number"
+          placeholder="Seg"
+          min="0"
+          max="59"
+          value={actividadAEditar?.segundos || 0}
+          onChange={(e) => setActividadAEditar({ ...actividadAEditar, segundos: parseInt(e.target.value) })}
+          className="border p-2 rounded-md w-1/3"
+        />
+      </div>
+
+      <div className="mb-4">
+        <p className="font-semibold mb-2">Imágenes:</p>
+        <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+          {bancoTangrams.map((imagen, index) => (
+            <div
+              key={index}
+              onClick={() => {
+                const nuevas = actividadAEditar?.banco_tangrams?.includes(imagen)
+                  ? actividadAEditar.banco_tangrams.filter(img => img !== imagen)
+                  : [...(actividadAEditar?.banco_tangrams || []), imagen];
+                setActividadAEditar({ ...actividadAEditar, banco_tangrams: nuevas });
+              }}
+              className={`cursor-pointer border-2 ${actividadAEditar?.banco_tangrams?.includes(imagen) ? "border-blue-500" : "border-gray-300"}`}
+            >
+              <img src={imagen} alt={`Tangram ${index}`} className="w-full h-auto" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-end mt-4">
+        <button onClick={cerrarModalEditar} className="bg-gray-400 text-white px-4 py-2 rounded-md mr-2">Cancelar</button>
+        <button
+          onClick={async () => {
+            await handleEditarActividad(actividadAEditar);
+            cerrarModalEditar();
+          }}
+          className="bg-blue-500 text-white px-4 py-2 rounded-md"
+        >
+          Actualizar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{showVerModal && actividadAVer && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
+      <h2 className="text-xl font-bold mb-4 text-center">Detalles de la Actividad</h2>
+
+      <p><strong>Nombre:</strong> {actividadAVer.nombre}</p>
+      <p><strong>Tiempo:</strong> {`${String(actividadAVer.horas).padStart(2, '0')}:${String(actividadAVer.minutos).padStart(2, '0')}:${String(actividadAVer.segundos).padStart(2, '0')}`}</p>
+      <p><strong>Salón:</strong> {actividadAVer.salon ? `${actividadAVer.salon.grado} - ${actividadAVer.salon.grupo}` : 'No asignado'}</p>
+      <p><strong>Estado:</strong> {actividadAVer.activo ? 'Activa' : 'Inactiva'}</p>
+
+      <div className="mt-4">
+        <strong>Imágenes seleccionadas:</strong>
+        <div className="grid grid-cols-3 gap-2 mt-2 max-h-40 overflow-y-auto">
+          {(actividadAVer.banco_tangrams || []).map((img, i) => (
+            <img key={i} src={img} alt={`img-${i}`} className="w-full rounded border" />
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-6 text-center">
+        <button
+          onClick={() => setShowVerModal(false)}
+          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
 
       </div>

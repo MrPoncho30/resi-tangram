@@ -85,24 +85,6 @@ const Board = () => {
       socket.current.onopen = () => {
         console.log("Conectado al WebSocket del equipo:", teamId);
       
-        // // 🔥 Primero resetea localmente
-        // setIndiceImagen(0);
-        // setUsuariosListos([]);
-        // setImagenesCapturadas([]);
-        // setIsPlaying(false);
-        // reiniciarTablero();
-
-
-        //  // 🔥 Luego manda mensaje al servidor para reiniciar allá también
-        //  socket.current.send(
-        //   JSON.stringify({
-        //     tipo: "reiniciar_sesion",
-        //     nickname: nickname,
-        //     teamId: teamId,
-        //   })
-        // );
-
-        // 🔥 Pedimos el estado actual (pieces, rotaciones, índice imagen, usuarios listos)
         socket.current.send(
           JSON.stringify({
             tipo: "solicitar_estado_actual",
@@ -275,12 +257,18 @@ const Board = () => {
       const originalBoxShadow = boardRef.current.style.boxShadow;
       const originalBorder = boardRef.current.style.border;
   
+    // Ocultar elementos con clase "captura-ocultar"
+      const ocultar = document.querySelectorAll(".captura-ocultar");
+      ocultar.forEach((el) => (el.style.display = "none"));
+
       boardRef.current.style.boxShadow = "none";
       boardRef.current.style.border = "none";
   
       const canvas = await html2canvas(boardRef.current);
       const dataUrl = canvas.toDataURL("image/png");
-  
+    // Restaurar visibilidad
+      ocultar.forEach((el) => (el.style.display = ""));
+
       boardRef.current.style.boxShadow = originalBoxShadow;
       boardRef.current.style.border = originalBorder;
   
@@ -520,12 +508,19 @@ const handleDragStart = (e, id) => {
       const originalBoxShadow = boardRef.current.style.boxShadow;
       const originalBorder = boardRef.current.style.border;
     
+  // Ocultar elementos con clase "captura-ocultar"
+      const ocultar = document.querySelectorAll(".captura-ocultar");
+      ocultar.forEach((el) => (el.style.display = "none"));
+
       boardRef.current.style.boxShadow = "none";
       boardRef.current.style.border = "none";
     
       const canvas = await html2canvas(boardRef.current);
       const dataUrl = canvas.toDataURL("image/png");
     
+    // Restaurar visibilidad
+        ocultar.forEach((el) => (el.style.display = ""));
+
       boardRef.current.style.boxShadow = originalBoxShadow;
       boardRef.current.style.border = originalBorder;
     
@@ -635,7 +630,7 @@ const handleListoParaFinalizar = () => {
               <h1 className="text-2xl font-bold text-center mb-2 text-purple-700 font-comic animate-pulse">
                 ¡A Jugar!
               </h1>
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 mt-8 bg-white p-2 rounded-xl shadow text-center z-50">
+              <div className="captura-ocultar absolute top-4 left-1/2 transform -translate-x-1/2 mt-8 bg-white p-2 rounded-xl shadow text-center z-50">
                 <p className="text-sm font-semibold text-purple-800">
                   Figura {indiceImagen + 1} de {IMAGES.length}
                 </p>

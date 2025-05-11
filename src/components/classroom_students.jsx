@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
 import { FaArrowLeft } from 'react-icons/fa';
+import { FaTrash } from "react-icons/fa";
+
 
 const API_URL_CREATE = "http://127.0.0.1:8000/estudiantes/api/crear_estudiante/";
 const API_URL_LIST = "http://127.0.0.1:8000/estudiantes/api/listar_estudiantes/";  // API para obtener los alumnos
@@ -84,6 +86,13 @@ const ClassroomStudents = () => {
     }
   };
   
+
+  const handleEliminarEstudiante = (id) => {
+  // Aquí podrías lanzar una confirmación o llamar a tu API
+  console.log("Eliminar estudiante con ID:", id);
+};
+
+
   const handleCloseViewEquipoModal = () => {
     setShowViewEquipoModal(false);
     setSelectedEquipoId(null);
@@ -771,14 +780,20 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                      <ul>
                       {alumnosEquipo.length > 0 ? (
                         alumnosEquipo.map((alumno) => (
-                          <li key={alumno.id} className="py-1 border-b">
-                            {alumno.nombre} {alumno.apellidos} - {alumno.nickname}
+                          <li key={alumno.id} className="py-1 border-b flex justify-between items-center">
+                            <span>{alumno.nombre} {alumno.apellidos} - {alumno.nickname}</span>
+                            <FaTrash 
+                              className="text-red-500 cursor-pointer hover:text-red-700"
+                              onClick={() => handleEliminarEstudiante(alumno.id)}
+                              title="Eliminar estudiante"
+                            />
                           </li>
                         ))
                       ) : (
                         <p className="text-center">Sin estudiantes</p> 
                       )}
                     </ul>
+
 
                   )}
 
