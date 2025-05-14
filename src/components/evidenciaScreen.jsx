@@ -36,6 +36,8 @@ const EvidenciaScreen = () => {
     mensajes_enviados: 0,
     respuestas_enviadas: 0,
   });
+  const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
+
   const colores = [
     'rgba(255, 99, 132, 0.5)',
     'rgba(54, 162, 235, 0.5)',
@@ -44,6 +46,7 @@ const EvidenciaScreen = () => {
     'rgba(153, 102, 255, 0.5)',
     'rgba(255, 159, 64, 0.5)',
   ];
+
   useEffect(() => {
     const fetchEvidencia = async () => {
       try {
@@ -64,39 +67,33 @@ const EvidenciaScreen = () => {
     fetchEvidencia();
   }, [id]);
 
-const cargarImagen = (url) => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+  const cargarImagen = (url) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
 
-      canvas.width = img.width + 2;  // Añadir espacio para el borde
-      canvas.height = img.height + 2;
+        canvas.width = img.width + 2;
+        canvas.height = img.height + 2;
 
-      // Fondo blanco (opcional)
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, canvas.width - 1, canvas.height - 1);
+        ctx.drawImage(img, 1, 1);
 
-      // Dibuja el borde negro
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0.5, 0.5, canvas.width - 1, canvas.height - 1);
-
-      // Dibuja la imagen
-      ctx.drawImage(img, 1, 1);
-
-      resolve(canvas.toDataURL('image/png'));
-    };
-    img.onerror = () => {
-      console.warn('❌ No se pudo cargar la imagen:', url);
-      resolve('');
-    };
-    img.src = url;
-  });
-};
-
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => {
+        console.warn('❌ No se pudo cargar la imagen:', url);
+        resolve('');
+      };
+      img.src = url;
+    });
+  };
 
   const generarGraficaRadarCanvas = (estadisticas, totales) => {
     return new Promise((resolve) => {
@@ -118,11 +115,7 @@ const cargarImagen = (url) => {
             })),
             {
               label: 'General del equipo',
-              data: [
-                totales.piezas_movidas,
-                totales.mensajes_enviados,
-                totales.respuestas_enviadas,
-              ],
+              data: [totales.piezas_movidas, totales.mensajes_enviados, totales.respuestas_enviadas],
               fill: true,
               backgroundColor: 'rgba(0, 128, 0, 0.2)',
               borderColor: 'rgba(0, 128, 0, 1)',
@@ -139,7 +132,7 @@ const cargarImagen = (url) => {
     });
   };
 
-  const handleGenerarPDF = async () => {
+const handleGenerarPDF = async () => {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const token = localStorage.getItem('accessToken');
   let y = 10;
@@ -212,47 +205,71 @@ const cargarImagen = (url) => {
   }
 };
 
-
   return (
     <div className="min-h-screen bg-gray-100 flex">
       <Navbar />
       <div className="flex-1 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">Detalle de Evidencia</h1>
-          <button onClick={() => navigate(-1)} className="flex items-center text-gray-700 hover:text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-800">Detalle de Evidencia</h1>
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center text-gray-700 hover:text-gray-900 text-sm"
+          >
             <FaArrowLeft className="mr-2" /> Volver
           </button>
         </div>
 
         <button
           onClick={handleGenerarPDF}
-          className="mb-6 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          className="mb-6 bg-rose-600 hover:bg-rose-700 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-lg transition-all duration-300"
         >
           Descargar PDF
         </button>
 
-        <div className="grid grid-cols-3 gap-6">
-          <div className="bg-white p-4 rounded shadow">
-            <h2 className="text-lg font-semibold mb-2">Tangrams Originales</h2>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Tangrams originales */}
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">
+              Tangrams Originales
+            </h2>
+            <div className="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto">
               {imagenesOriginales.map((url, idx) => (
-                <img key={idx} src={url} alt={`Original ${idx}`} className="w-full rounded" />
+                <img
+                  key={idx}
+                  src={url}
+                  alt={`Original ${idx}`}
+                  onClick={() => setImagenSeleccionada(idx)}
+                  className={`w-full h-auto object-contain cursor-pointer rounded-xl border-2 transition-all duration-300 ${imagenSeleccionada === idx ? 'border-blue-500' : 'border-gray-200'}`}
+                />
               ))}
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded shadow">
-            <h2 className="text-lg font-semibold mb-2">Capturas del Equipo</h2>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {imagenesEvidencia.map((img, idx) => (
-                <img key={idx} src={img.imagen_url} alt={`Evidencia ${idx}`} className="w-full mb-2 rounded border" />
-              ))}
+          {/* Capturas del equipo */}
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">
+              Capturas del Equipo
+            </h2>
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {imagenesEvidencia
+                .filter((img) => img.indice === imagenSeleccionada)
+                .map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={img.imagen_url}
+                    alt={`Evidencia ${idx}`}
+                    className="w-full rounded-xl border border-gray-200"
+                  />
+                ))}
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded shadow flex flex-col items-center">
-            <h2 className="text-lg font-semibold mb-4">Rendimiento del Equipo</h2>
-            <div className="flex justify-center items-center w-full h-[400px]">
+          {/* Rendimiento */}
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 flex flex-col items-center">
+            <h2 className="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">
+              Rendimiento del Equipo
+            </h2>
+            <div className="w-full h-[300px] ml-40">
               {estadisticas.length > 0 ? (
                 <Radar
                   data={{
@@ -278,16 +295,25 @@ const cargarImagen = (url) => {
                   }}
                 />
               ) : (
-                <p className="text-sm text-gray-500 text-center">No hay datos disponibles.</p>
+                <p className="text-sm text-gray-500 text-center">
+                  No hay datos disponibles.
+                </p>
               )}
             </div>
-            <div className="mt-4">
-              <h3 className="text-sm font-bold mb-2 text-center">Integrantes</h3>
-              <ul className="text-center text-sm">
+            <div className="mt-6 w-full">
+              <h3 className="text-sm font-bold text-center text-gray-700 mb-2">
+                Integrantes
+              </h3>
+              <div className="flex justify-center flex-wrap gap-2">
                 {equipo?.estudiantes?.map((est) => (
-                  <li key={est.id}>{est.nombre}</li>
+                  <span
+                    key={est.id}
+                    className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium"
+                  >
+                    {est.nombre}
+                  </span>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
         </div>

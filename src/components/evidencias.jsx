@@ -166,7 +166,7 @@ const Evidencias = () => {
           <h1 className="text-2xl font-bold text-gray-800">Panel de Evidencia</h1>
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center text-gray-700 hover:text-gray-900"
+            className="flex items-center text-gray-700 hover:text-blue-900"
           >
             <FaArrowLeft className="mr-2" /> Volver
           </button>
@@ -249,59 +249,67 @@ const Evidencias = () => {
             </div>
           </div>
 
-          <button
-            className="py-2 px-4 bg-blue-400 text-white rounded hover:bg-blue-500"
-            onClick={limpiarFiltros}
-          >
-            Limpiar Filtros
-          </button>
+        <button
+          onClick={limpiarFiltros}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm transition-all duration-300"
+        >
+          Limpiar Filtros
+        </button>
+
         </div>
 
         {/* TABLA */}
-        <table className="w-full bg-white rounded-lg shadow-md overflow-hidden">
-          <thead>
-            <tr className="bg-gray-200 text-gray-700">
-              <th className="border p-2">Evidencia</th>
-              <th className="border p-2">Actividad</th>
-              <th className="border p-2">Salón</th>
-              <th className="border p-2">Equipo</th>
-              <th className="border p-2">Fecha</th>
-              <th className="border p-2">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {evidenciasAMostrar.length > 0 ? (
-              evidenciasAMostrar.map((ev, idx) => (
-                <tr key={idx} className="text-center border-b hover:bg-gray-100">
-                  <td className="border p-2">{ev.nombre}</td>
-                  <td className="border p-2">{ev.actividad}</td>
-                  <td className="border p-2">{ev.salon}</td>
-                  <td className="border p-2">{ev.equipo}</td>
-                  <td className="border p-2">{ev.fecha}</td>
-                  <td className="border p-2">
-                    <button onClick={() => {console.log(ev); navigate(`/evidencia/${ev.id}`)}} 
-                    className="bg-green-500 text-white px-2 py-1 rounded mr-2">
-                      Ver
-                    </button>
-<button
-  className="bg-red-500 text-white px-2 py-1 rounded mr-2"
-  onClick={() => handleEliminarEvidencia(ev.id)}
->
-  Eliminar
-</button>
+<div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+  <table className="w-full">
+    <thead>
+      <tr className="bg-gray-200 text-gray-700 text-sm uppercase tracking-wider">
+        <th className="p-3 border-r last:border-r-0">Evidencia</th>
+        <th className="p-3 border-r last:border-r-0">Actividad</th>
+        <th className="p-3 border-r last:border-r-0">Salón</th>
+        <th className="p-3 border-r last:border-r-0">Equipo</th>
+        <th className="p-3 border-r last:border-r-0">Fecha</th>
+        <th className="p-3">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {evidenciasAMostrar.length > 0 ? (
+        evidenciasAMostrar.map((ev, idx) => (
+          <tr key={idx} className="text-center border-b hover:bg-gray-50 transition">
+            <td className="p-4 text-sm text-gray-800 border-r last:border-r-0">{ev.nombre}</td>
+            <td className="p-4 text-sm text-gray-800 border-r last:border-r-0">{ev.actividad}</td>
+            <td className="p-4 text-sm text-gray-800 border-r last:border-r-0">{ev.salon}</td>
+            <td className="p-4 text-sm text-gray-800 border-r last:border-r-0">{ev.equipo}</td>
+            <td className="p-4 text-sm text-gray-800 border-r last:border-r-0">{ev.fecha}</td>
+            <td className="p-4">
+              <button
+                onClick={() => {
+                  console.log(ev);
+                  navigate(`/evidencia/${ev.id}`);
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg text-sm mr-2 transition-all duration-300"
+              >
+                Ver
+              </button>
+              <button
+                onClick={() => handleEliminarEvidencia(ev.id)}
+                className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded-lg text-sm transition-all duration-300"
+              >
+                Eliminar
+              </button>
+            </td>
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan="6" className="px-4 py-6 text-center text-gray-500 text-sm">
+            No hay evidencias disponibles
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
 
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="px-4 py-2 text-center text-gray-500">
-                  No hay evidencias disponibles
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
 
         {/* Paginación */}
         {totalPaginas > 1 && (

@@ -416,8 +416,8 @@ const handleEditarActividad = async (actividad) => {
               </button>
               </div>
 
-            <button onClick={() => setShowForm(true)} className="mb-4 bg-green-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-800 transition">
-              Crear Actividad
+            <button onClick={() => setShowForm(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm transition-all duration-300 mb-4">
+              + Crear Actividad
             </button>
             
             {showForm && (
@@ -472,71 +472,96 @@ const handleEditarActividad = async (actividad) => {
               </form>
             )}
 
-<table className="w-full bg-white rounded-lg shadow-md overflow-hidden">
-  <thead>
-    <tr className="bg-gray-200 text-gray-700">
-      <th className="border p-2">Nombre</th>
-      <th className="border p-2">Tiempo</th>
-      <th className="border p-2">Salón</th> 
-      <th className="border p-2">Estado</th> {/* Nueva columna */}
-      <th className="border p-2">Acciones</th>
-    </tr>
-  </thead>
-  <tbody>
-    {actividades.length > 0 ? ( 
-      actividades.map((actividad) => (
-        <tr key={actividad.id} className="text-center border-b hover:bg-gray-100">
-          <td className="border p-2">{actividad.nombre}</td>
-          <td className="border p-2">
-            {`${String(actividad.horas).padStart(2, '0')}:${String(actividad.minutos).padStart(2, '0')}:${String(actividad.segundos).padStart(2, '0')}`}
-          </td>
-          <td className="border p-2">
-            {actividad.salon 
-              ? `${actividad.salon.grado} - ${actividad.salon.grupo} (${actividad.salon.ciclo_escolar_inicio} - ${actividad.salon.ciclo_escolar_fin})`
-              : 'No asignado'}
-          </td>
-          <td className="border p-2">
-<label
-  className={`inline-flex items-center ${!actividad.salon?.id ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-  title={!actividad.salon?.id ? "Debes asignar un salón antes de activar esta actividad." : ""}
->
-  <input
-    type="checkbox"
-    className="sr-only peer"
-    checked={actividad.activo}
-    onChange={() => handleToggleActivo(actividad.id, actividad.activo)}
-    disabled={!actividad.salon?.id} // Deshabilita si no tiene salón
-  />
-  <div className={`relative w-11 h-6 rounded-full transition-all
-    ${!actividad.salon?.id ? 'bg-gray-200 opacity-50' : 'bg-gray-200'}
-    peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700
-    peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600
-    peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
-    peer-checked:after:border-white
-    after:content-[''] after:absolute after:top-0.5 after:start-[2px]
-    after:bg-white after:border-gray-300 after:border after:rounded-full
-    after:h-5 after:w-5 after:transition-all dark:border-gray-600`}>
-  </div>
-</label>
-
-    </td>
-          <td className="border p-2">
-            <button onClick={() => { setActividadAVer(actividad); setShowVerModal(true);}} className="bg-blue-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-blue-700">Ver</button>
-            <button onClick={() => abrirModalEditar(actividad)} className="bg-yellow-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-yellow-700">Editar</button>
-            <button onClick={() => handleEliminarActividad(actividad.id)} className="bg-red-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-red-700">Eliminar</button>
-            <button onClick={() => handleAssignToClass(actividad.id)} className="bg-green-500 text-white px-2 py-1 rounded-md mx-1 hover:bg-green-700">Asignar a</button>
+<div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+  <table className="w-full">
+    <thead>
+      <tr className="bg-gray-200 text-gray-700 text-sm uppercase tracking-wider">
+        <th className="p-3 border-r last:border-r-0">Nombre</th>
+        <th className="p-3 border-r last:border-r-0">Tiempo</th>
+        <th className="p-3 border-r last:border-r-0">Salón</th>
+        <th className="p-3 border-r last:border-r-0">Estado</th>
+        <th className="p-3">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {actividades.length > 0 ? (
+        actividades.map((actividad) => (
+          <tr key={actividad.id} className="text-center border-b hover:bg-gray-50 transition">
+            <td className="p-4 text-sm text-gray-800 border-r last:border-r-0">{actividad.nombre}</td>
+            <td className="p-4 text-sm text-gray-800 border-r last:border-r-0">
+              {`${String(actividad.horas).padStart(2, '0')}:${String(actividad.minutos).padStart(2, '0')}:${String(actividad.segundos).padStart(2, '0')}`}
+            </td>
+            <td className="p-4 text-sm text-gray-800 border-r last:border-r-0">
+              {actividad.salon 
+                ? `${actividad.salon.grado}º ${actividad.salon.grupo} (${actividad.salon.ciclo_escolar_inicio}-${actividad.salon.ciclo_escolar_fin})`
+                : 'No asignado'}
+            </td>
+            <td className="p-4 border-r last:border-r-0">
+              <label
+                className={`inline-flex items-center ${!actividad.salon?.id ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                title={!actividad.salon?.id ? "Debes asignar un salón antes de activar esta actividad." : ""}
+              >
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={actividad.activo}
+                  onChange={() => handleToggleActivo(actividad.id, actividad.activo)}
+                  disabled={!actividad.salon?.id}
+                />
+                <div className={`relative w-11 h-6 rounded-full transition-all
+                  ${!actividad.salon?.id ? 'bg-gray-200 opacity-50' : 'bg-gray-200'}
+                  peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700
+                  peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600
+                  peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
+                  peer-checked:after:border-white
+                  after:content-[''] after:absolute after:top-0.5 after:start-[2px]
+                  after:bg-white after:border-gray-300 after:border after:rounded-full
+                  after:h-5 after:w-5 after:transition-all dark:border-gray-600`}>
+                </div>
+              </label>
+            </td>
+            <td className="p-4">
+              <button
+                onClick={() => {
+                  setActividadAVer(actividad);
+                  setShowVerModal(true);
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg text-sm mx-1 transition-all duration-300"
+              >
+                Ver
+              </button>
+              <button
+                onClick={() => abrirModalEditar(actividad)}
+                className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-lg text-sm mx-1 transition-all duration-300"
+              >
+                Editar
+              </button>
+              <button
+                onClick={() => handleEliminarActividad(actividad.id)}
+                className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded-lg text-sm mx-1 transition-all duration-300"
+              >
+                Eliminar
+              </button>
+              <button
+                onClick={() => handleAssignToClass(actividad.id)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-sm mx-1 transition-all duration-300"
+              >
+                Asignar a
+              </button>
+            </td>
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan="5" className="px-4 py-6 text-center text-gray-500 text-sm">
+            No hay actividades disponibles
           </td>
         </tr>
-      ))
-    ) : (
-      <tr>
-        <td colSpan="5" className="px-4 py-2 text-center text-gray-500">
-          No hay actividades disponibles
-        </td>
-      </tr>
-    )}
-  </tbody>
-</table>
+      )}
+    </tbody>
+  </table>
+</div>
+
 
        {/* Modal Asignar a */}
        {showAssignModal && (
@@ -564,13 +589,20 @@ const handleEditarActividad = async (actividad) => {
 
             </div>
             <div className="mt-4">
-              <button onClick={() => setShowAssignModal(false)} className="bg-gray-500 text-white py-2 px-4 rounded-md">Cancelar</button>
-              <button 
-                onClick={handleAssignActivityToClass} 
-                className="bg-blue-500 text-white py-2 px-4 rounded-md"
-              >
-                Asignar
-              </button>
+  <button
+  onClick={() => setShowAssignModal(false)}
+  className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300"
+>
+  Cancelar
+</button>
+
+<button
+  onClick={handleAssignActivityToClass}
+  className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 ml-2"
+>
+  Asignar
+</button>
+
             </div>
           </div>
         </div>
@@ -646,16 +678,23 @@ const handleEditarActividad = async (actividad) => {
       </div>
 
       <div className="flex justify-end mt-4">
-        <button onClick={cerrarModalEditar} className="bg-gray-400 text-white px-4 py-2 rounded-md mr-2">Cancelar</button>
         <button
-          onClick={async () => {
-            await handleEditarActividad(actividadAEditar);
-            cerrarModalEditar();
-          }}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md"
-        >
-          Actualizar
-        </button>
+  onClick={cerrarModalEditar}
+  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 mr-2"
+>
+  Cancelar
+</button>
+
+<button
+  onClick={async () => {
+    await handleEditarActividad(actividadAEditar);
+    cerrarModalEditar();
+  }}
+  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
+>
+  Actualizar
+</button>
+
       </div>
     </div>
   </div>
@@ -681,12 +720,13 @@ const handleEditarActividad = async (actividad) => {
       </div>
 
       <div className="mt-6 text-center">
-        <button
-          onClick={() => setShowVerModal(false)}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-        >
-          Cerrar
-        </button>
+  <button
+  onClick={() => setShowVerModal(false)}
+  className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
+>
+  Cerrar
+</button>
+
       </div>
     </div>
   </div>

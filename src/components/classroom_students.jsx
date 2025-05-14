@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FaTrash } from "react-icons/fa";
+import { useLocation } from 'react-router-dom';
 
 
 const API_URL_CREATE = "http://127.0.0.1:8000/estudiantes/api/crear_estudiante/";
@@ -43,8 +44,16 @@ const ClassroomStudents = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [busqueda, setBusqueda] = useState("");
-
+  const location = useLocation();
+  const { grado, grupo } = location.state || {};
   
+  const [showEditarNombreModal, setShowEditarNombreModal] = useState(false);
+  const [nuevoNombreEquipo, setNuevoNombreEquipo] = useState('');
+  const [equipoIdParaEditar, setEquipoIdParaEditar] = useState(null);
+
+  const [showEditarModal, setShowEditarModal] = useState(false);
+
+
   // Función para abrir el modal de "Ver equipo" y obtener los alumnos
   const handleOpenViewEquipoModal = async (equipoId) => {
     setShowViewEquipoModal(true);
@@ -87,10 +96,53 @@ const ClassroomStudents = () => {
   };
   
 
-  const handleEliminarEstudiante = (id) => {
-  // Aquí podrías lanzar una confirmación o llamar a tu API
-  console.log("Eliminar estudiante con ID:", id);
+const handleEliminarEstudiante = async (id) => {
+  const confirmar = window.confirm("¿Estás seguro de que deseas eliminar a este estudiante del equipo?");
+  if (!confirmar) return;
+
+  try {
+    const token = localStorage.getItem("accessToken");
+
+    const response = await fetch(`http://127.0.0.1:8000/estudiantes/api/remover_estudiante_equipo/${id}/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("No se pudo eliminar al estudiante.");
+    }
+
+    const data = await response.json();
+    alert(data.mensaje);
+
+    // 🔄 Actualizar la lista general de alumnos
+    setAlumnos(prev => prev.map(al => 
+      al.id === id ? { ...al, equipo: null } : al
+    ));
+
+    // 🔄 Actualizar los alumnos dentro del modal de equipo si está abierto
+    setAlumnosEquipo(prev => prev.filter(est => est.id !== id));
+
+    // 🔄 (Opcional) Actualizar equipos si manejas estado de `equipos` con estudiantes anidados
+    setEquipos(prev => 
+      prev.map(eq => ({
+        ...eq,
+        estudiantes: Array.isArray(eq.estudiantes)
+          ? eq.estudiantes.filter(est => est.id !== id)
+          : [],
+      }))
+    );
+
+  } catch (error) {
+    console.error("❌ Error al eliminar estudiante:", error);
+    alert("Ocurrió un error al eliminar al estudiante.");
+  }
 };
+
+
 
 
   const handleCloseViewEquipoModal = () => {
@@ -263,35 +315,66 @@ const handleRegistrarAlumnoClick = () => {
 };
 
   // Editar alumno
-  const handleEditAlumno = (alumno) => {
-    setEditingAlumno(alumno);
-    setFormData({ nombre: alumno.nombre, apellidos: alumno.apellidos, nickname: alumno.nickname, salon: alumno.salon, equipo: alumno.equipo });
-    setShowModal(true);
-  };
+const handleEditAlumno = (alumno) => {
+  setEditingAlumno(alumno);
+  setFormData({
+    nombre: alumno.nombre,
+    apellidos: alumno.apellidos,
+    nickname: alumno.nickname,
+  });
+  setShowEditarModal(true); // ← Usa el modal de edición, no el de registro
+};
+
 
   // Actualizar alumno en la API
-  const handleUpdateAlumno = async () => {
-    try {
-      const accessToken = localStorage.getItem('accessToken');
-      console.log('Datos que se envían:', { ...formData });
-      const response = await fetch(`${API_URL_CREATE}/${editingAlumno.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      if (!response.ok) throw new Error("Error actualizando alumno");
+const handleUpdateAlumno = async () => {
+  if (!editingAlumno) return;
 
-      const updatedAlumnos = alumnos.map((alumno) =>
-        alumno.id === editingAlumno.id ? { ...alumno, ...formData } : alumno
-      );
-      setAlumnos(updatedAlumnos);
-      setShowModal(false);
-      setEditingAlumno(null);
-      setFormData({ nombre: '', apellidos: '', nickname: '', salon: id, equipo: null });
-    } catch (error) {
-      console.error("Error actualizando alumno:", error);
+  try {
+    const token = localStorage.getItem('accessToken');
+
+    const response = await fetch(
+  `http://127.0.0.1:8000/estudiantes/api/editar_estudiante/${editingAlumno.id}/`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          nombre: formData.nombre,
+          apellidos: formData.apellidos,
+          nickname: formData.nickname,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || "Error actualizando alumno");
     }
-  };
+
+    // Actualiza el alumno en la lista sin recargar
+    const alumnosActualizados = alumnos.map((alumno) =>
+      alumno.id === editingAlumno.id
+        ? { ...alumno, nombre: formData.nombre, apellidos: formData.apellidos, nickname: formData.nickname }
+        : alumno
+    );
+
+    setAlumnos(alumnosActualizados);
+    setShowEditarModal(false);
+    setEditingAlumno(null);
+    setFormData({ nombre: '', apellidos: '', nickname: '', salon_id: id, equipo: null });
+
+    alert(data.mensaje);
+  } catch (error) {
+    console.error("❌ Error actualizando alumno:", error.message);
+    alert("Ocurrió un error al actualizar el alumno.");
+  }
+};
+
+
 
   // Eliminar alumno
   const handleDeleteAlumno = async (alumnoId) => {
@@ -402,6 +485,46 @@ const handleAsignarAlumnosClick = (equipoId) => {
   setShowAsignarModal(true);     // Abre el modal de asignar alumnos
   setShowRegistrarModal(false); // Cierra el modal de registrar si está abierto
 };
+
+const handleEditarEquipoName = async (equipoId) => {
+  if (!nuevoNombreEquipo.trim()) {
+    alert("El nombre no puede estar vacío.");
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("accessToken");
+    const response = await fetch(`http://127.0.0.1:8000/equipos/api/editar_nombre_equipo/${equipoId}/`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ nombre: nuevoNombreEquipo }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al actualizar el nombre del equipo");
+    }
+
+    const data = await response.json();
+    alert(data.mensaje);
+
+    // ✅ Cierra el modal y recarga la lista de equipos si tienes una función para eso
+    setShowEditarNombreModal(false);
+
+    // Opcional: recargar lista o actualizar estado local si ya tienes los equipos cargados
+    setEquipos(prev =>
+      prev.map(eq =>
+        eq.id === equipoId ? { ...eq, nombre: nuevoNombreEquipo } : eq
+      )
+    );
+  } catch (error) {
+    console.error("❌ Error:", error);
+    alert("No se pudo actualizar el nombre del equipo.");
+  }
+};
+
 
 
 const handleCheckboxChange = (id) => {
@@ -537,17 +660,19 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
           <button
             type="button"
             onClick={handleSubmit}
-            className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
           >
             Asignar
           </button>
+
           <button
             type="button"
             onClick={() => setShowModal(false)}
-            className="ml-2 py-2 px-4 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+            className="ml-2 py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-all duration-300"
           >
             Cancelar
           </button>
+
         </div>
       </div>
     </div>
@@ -558,19 +683,27 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
     <div className="min-h-screen bg-gray-100 flex">
       <Navbar />
       <div className="flex-1 p-6">
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Alumnos del Salón {id}</h1>
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Alumnos del Salón {grado}°{grupo}</h1>
 
         <button onClick={() => navigate(-1)} className="flex items-center text-gray-700 hover:text-gray-900 mb-4">
           <FaArrowLeft className="mr-2" /> Volver
         </button>
 
         <div className="flex justify-between mb-6">
-          <button onClick={() => setShowModal(true)} className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+          <button
+            onClick={() => setShowModal(true)}
+            className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300 mr-2"
+          >
             Registrar Alumno
           </button>
-          <button onClick={() => setShowEquipoModal(true)} className="py-2 px-4 bg-green-500 text-white rounded-md hover:bg-green-600">
+
+          <button
+            onClick={() => setShowEquipoModal(true)}
+            className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+          >
             Crear Equipo
           </button>
+
         </div>
 
         <div className="bg-white p-4 rounded-lg shadow-md mb-6">
@@ -602,16 +735,18 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                         <div className="flex justify-start space-x-2">
                           <button
                             onClick={() => handleEditAlumno(alumno)}
-                            className="py-1 px-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 mr-2"
                           >
                             Editar
                           </button>
+
                           <button
                             onClick={() => handleDeleteAlumno(alumno.id)}
-                            className="py-1 px-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300"
                           >
                             Eliminar
                           </button>
+
                         </div>
                       </td>
                     </tr>
@@ -668,25 +803,37 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                       </td>
                       <td className="px-4 py-2">
                         <button
-                          className="bg-blue-500 text-white px-3 py-1 rounded mr-2"
                           onClick={() => handleOpenViewEquipoModal(equipo.id)}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 mr-2"
                         >
                           Ver equipo
-                        </button>                        <button
+                        </button>
+
+                        <button
                           onClick={() => handleAsignarAlumnosClick(equipo.id)}
-                          className="py-1 px-2 mr-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 mr-2"
                         >
                           Asignar Alumnos
                         </button>
-                        <button className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">
+
+                        <button
+                          onClick={() => {
+                            setEquipoIdParaEditar(equipo.id);  // id del equipo actual
+                            setNuevoNombreEquipo(equipo.nombre); // para precargar
+                            setShowEditarNombreModal(true);
+                          }}
+                          className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 mr-2"
+                        >
                           Editar
-                          </button>
-                        <button 
-                          onClick={() => handleDeleteEquipo(equipo.id)} 
-                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteEquipo(equipo.id)}
+                          className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300"
                         >
                           Eliminar
                         </button>
+
                       </td>
                     </tr>
                   ))
@@ -696,36 +843,149 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
           </div>
         </div>
 
-        {/* Modal para registrar o editar alumnos */}
-        {showModal && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg w-96">
-              <h2 className="text-xl font-bold mb-4">{editingAlumno ? 'Editar Alumno' : 'Registrar Alumno'}</h2>
+        {showEditarNombreModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
+              <h2 className="text-xl font-bold mb-4">Editar Nombre del Equipo</h2>
               <form>
                 <div className="mb-4">
-                  <label className="block text-gray-700">Nombre</label>
-                  <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full p-2 border border-gray-300 rounded-md" />
+                  <label className="block text-gray-700">Nuevo Nombre</label>
+                  <input
+                    type="text"
+                    value={nuevoNombreEquipo}
+                    onChange={(e) => setNuevoNombreEquipo(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    placeholder="Nombre del equipo"
+                  />
                 </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700">Apellidos</label>
-                  <input type="text" value={formData.apellidos} onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })} className="w-full p-2 border border-gray-300 rounded-md" />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700">NickName</label>
-                  <input type="text" value={formData.nickname} onChange={(e) => setFormData({ ...formData, nickname: e.target.value })} className="w-full p-2 border border-gray-300 rounded-md" />
-                </div>
-                <div className="flex justify-end">
-                  <button type="button" onClick={editingAlumno ? handleUpdateAlumno : handleRegisterAlumno} className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                    {editingAlumno ? 'Actualizar' : 'Registrar'}
-                  </button>
-                  <button type="button" onClick={() => setShowModal(false)} className="ml-2 py-2 px-4 bg-gray-500 text-white rounded-md hover:bg-gray-600">
-                    Cancelar
-                  </button>
+
+                <div className="flex justify-center gap-4">
+<button
+          type="button"
+onClick={() => handleEditarEquipoName(equipoIdParaEditar)}
+
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+        >
+          Actualizar
+        </button>
+        <button
+          type="button"
+          onClick={() =>setShowEditarNombreModal(false)}
+
+          className="ml-2 bg-gray-500 text-white px-4 py-2 rounded-lg"
+        >
+          Cancelar
+        </button>
                 </div>
               </form>
             </div>
           </div>
         )}
+
+
+        {/* Modal para registrar o editar alumnos */}
+{showModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-white p-6 rounded-lg w-96">
+      <h2 className="text-xl font-bold mb-4">Registrar Alumno</h2>
+      <form>
+        <div className="mb-4">
+          <label className="block text-gray-700">Nombre</label>
+          <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full p-2 border border-gray-300 rounded-md" />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">Apellidos</label>
+          <input type="text" value={formData.apellidos} onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })} className="w-full p-2 border border-gray-300 rounded-md" />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">NickName</label>
+          <input type="text" value={formData.nickname} onChange={(e) => setFormData({ ...formData, nickname: e.target.value })} className="w-full p-2 border border-gray-300 rounded-md" />
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleRegisterAlumno}
+            className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+          >
+            Registrar
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowModal(false);
+              setFormData({ nombre: '', apellidos: '', nickname: '', salon_id: id, equipo: null });
+            }}
+            className="ml-2 py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+{showEditarModal && editingAlumno && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white p-6 rounded-lg w-96">
+      <h2 className="text-xl font-bold mb-4">Editar Alumno</h2>
+      <form>
+        <div className="mb-4">
+          <label className="block text-gray-700">Nombre</label>
+          <input
+            type="text"
+            value={formData.nombre}
+            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">Apellidos</label>
+          <input
+            type="text"
+            value={formData.apellidos}
+            onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">NickName</label>
+          <input
+            type="text"
+            value={formData.nickname}
+            onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          />
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleUpdateAlumno}
+            className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+          >
+            Actualizar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowEditarModal(false);
+              setEditingAlumno(null);
+              setFormData({ nombre: '', apellidos: '', nickname: '', salon_id: id, equipo: null });
+            }}
+            className="ml-2 py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+
+
+
 
         {/* Modal para crear equipo */}
         {showEquipoModal && (
@@ -743,12 +1003,22 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                   />
                 </div>
                 <div className="flex justify-end">
-                  <button type="button" onClick={handleCreateEquipo} className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                    Crear
-                  </button>
-                  <button type="button" onClick={() => setShowEquipoModal(false)} className="ml-2 py-2 px-4 bg-gray-500 text-white rounded-md hover:bg-gray-600">
-                    Cancelar
-                  </button>
+<button
+  type="button"
+  onClick={handleCreateEquipo}
+  className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+>
+  Crear
+</button>
+
+<button
+  type="button"
+  onClick={() => setShowEquipoModal(false)}
+  className="ml-2 py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+>
+  Cancelar
+</button>
+
                 </div>
               </form>
             </div>
@@ -797,12 +1067,13 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
 
                   )}
 
-                  <button
-                    className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                    onClick={handleCloseViewEquipoModal}
-                  >
-                    Cerrar
-                  </button>
+<button
+  onClick={handleCloseViewEquipoModal}
+  className="mt-4 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+>
+  Cerrar
+</button>
+
                 </div>
               </div>
             )}
