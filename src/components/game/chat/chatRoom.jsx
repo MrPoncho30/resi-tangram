@@ -100,67 +100,71 @@ const ChatRoom = () => {
   };
 
   return (
-    <div className="w-full h-[500px] flex flex-col bg-white rounded-lg shadow-lg p-4">
-      <h2 className="text-2xl font-semibold text-center mb-4">
-        "{teamName}"
-      </h2>
+  <div className="w-full h-[500px] flex flex-col bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 p-6">
+    <h2 className="text-2xl font-extrabold text-center text-blue-700 mb-4 tracking-wide drop-shadow-sm">
+      {teamName}
+    </h2>
 
-      <div className="flex-1 overflow-y-auto p-2 mb-4 bg-gray-100 rounded-lg max-h-[400px]">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className="mb-2 p-2 bg-gray-200 rounded-md relative group"
-          >
-            {msg.replyTo && (
-              <div className="text-sm text-gray-600 italic mb-1 pl-2 border-l-4 border-blue-400 bg-blue-100 rounded p-1">
-                En respuesta a <strong>{msg.replyTo.sender}</strong>: {msg.replyTo.text}
-              </div>
-            )}
-            <span className="font-bold">{msg.sender}:</span> {msg.text}
+    <div className="flex-1 overflow-y-auto px-3 py-2 bg-gradient-to-b from-gray-100 via-white to-gray-100 rounded-xl border border-gray-200 shadow-inner max-h-[380px] mb-4">
+      {messages.map((msg, index) => (
+        <div
+          key={index}
+          className="mb-3 p-3 rounded-lg bg-white shadow hover:shadow-md transition relative group border border-gray-200"
+        >
+          {msg.replyTo && (
+            <div className="text-xs text-gray-600 italic mb-2 border-l-4 border-blue-400 bg-blue-50 rounded px-2 py-1">
+              En respuesta a <strong>{msg.replyTo.sender}</strong>: {msg.replyTo.text}
+            </div>
+          )}
+          <p className="text-sm">
+            <span className="font-bold text-blue-600">{msg.sender}:</span>{" "}
+            {msg.text}
+          </p>
 
-            <button
-              onClick={() => setReplyToIndex(index)}
-              className="absolute right-2 top-2 text-blue-500 hover:text-blue-700 text-sm hidden group-hover:inline"
-              title="Responder"
-            >
-              ↩
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {replyToIndex !== null && (
-        <div className="mb-2 p-2 border-l-4 border-blue-400 bg-blue-100 rounded">
-          <span className="text-sm text-gray-700">
-            Respondiendo a <strong>{messages[replyToIndex]?.sender}</strong>:{" "}
-            {messages[replyToIndex]?.text}
-          </span>
           <button
-            onClick={() => setReplyToIndex(null)}
-            className="ml-2 text-red-500 text-sm"
+            onClick={() => setReplyToIndex(index)}
+            className="absolute right-2 top-2 text-blue-500 hover:text-blue-700 text-xs opacity-0 group-hover:opacity-100 transition"
+            title="Responder"
           >
-            ✖ Cancelar
+            ↩
           </button>
         </div>
-      )}
+      ))}
+    </div>
 
-      <div className="flex items-center space-x-2">
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Escribe un mensaje..."
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
+    {replyToIndex !== null && (
+      <div className="mb-3 p-2 bg-blue-100 border-l-4 border-blue-400 rounded-lg text-sm text-gray-700 flex justify-between items-center">
+        <span>
+          Respondiendo a <strong>{messages[replyToIndex]?.sender}</strong>:{" "}
+          {messages[replyToIndex]?.text}
+        </span>
         <button
-          onClick={handleSendMessage}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none"
+          onClick={() => setReplyToIndex(null)}
+          className="text-red-500 hover:text-red-600 text-sm ml-2"
         >
-          Enviar
+          ✖ Cancelar
         </button>
       </div>
+    )}
+
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        value={newMessage}
+        onChange={(e) => setNewMessage(e.target.value)}
+        placeholder="Escribe un mensaje..."
+        className="flex-1 px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm shadow-sm"
+      />
+      <button
+        onClick={handleSendMessage}
+        className="px-5 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold text-sm shadow-md hover:from-blue-600 hover:to-indigo-600 transition-all"
+      >
+        Enviar
+      </button>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default ChatRoom;

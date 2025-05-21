@@ -585,10 +585,10 @@ const handleListoParaFinalizar = () => {
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-blue-100 to-purple-200 overflow-hidden flex flex-col">
+    <div className="h-auto bg-gradient-to-br from-blue-100 to-purple-200 overflow-hidden flex flex-col">
       <div className="flex-1 grid grid-cols-12 gap-4 p-4">
         
-        {/* 🟨 PIEZAS */}
+        {/* PIEZAS */}
         <div className="col-span-2 bg-yellow-100 border-[6px] border-yellow-400 rounded-3xl shadow-lg flex flex-col items-center py-4 h-full overflow-y-auto">
           <h2 className="text-xl font-bold text-pink-600 mb-4 font-comic flex items-center gap-2">
             🧩 Piezas
@@ -657,29 +657,29 @@ const handleListoParaFinalizar = () => {
               ) : (
                 <p className="text-red-500 font-bold">No hay imagen disponible.</p>
               )}
- <button
-  onClick={handleReadyInicio}
-  disabled={usuariosListosInicio.includes(nickname) || IMAGES.length === 0}
-  className={`mt-4 px-6 py-3 text-white text-lg font-bold rounded-full shadow-lg transition ${
-    usuariosListosInicio.includes(nickname) || IMAGES.length === 0
-      ? "bg-gray-400 cursor-not-allowed"
-      : "bg-green-500 hover:bg-green-600"
-  }`}
->
-  Estoy Listo!
-</button>
-{usuariosListosInicio.length > 0 && (
-  <div className="mt-3 flex flex-wrap justify-center gap-2">
-    {usuariosListosInicio.map((user, index) => (
-      <span
-        key={index}
-        className="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
-      >
-        ✅ {user}
-      </span>
-    ))}
-  </div>
-)}
+                <button
+                  onClick={handleReadyInicio}
+                  disabled={usuariosListosInicio.includes(nickname) || IMAGES.length === 0}
+                  className={`mt-4 px-6 py-3 text-white text-lg font-bold rounded-full shadow-lg transition ${
+                    usuariosListosInicio.includes(nickname) || IMAGES.length === 0
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-green-500 hover:bg-green-600"
+                  }`}
+                >
+                  Estoy Listo!
+                </button>
+                {usuariosListosInicio.length > 0 && (
+                  <div className="mt-3 flex flex-wrap justify-center gap-2">
+                    {usuariosListosInicio.map((user, index) => (
+                      <span
+                        key={index}
+                        className="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                      >
+                        ✅ {user}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
             </div>
           )}
@@ -719,11 +719,12 @@ const handleListoParaFinalizar = () => {
         </div>
   
         {/* 💬 CHAT */}
-        <div className="col-span-4 bg-pink-100 border-[6px] border-pink-300 p-4 rounded-3xl shadow-lg h-full flex flex-col justify-between">
+        <div className="col-span-4 bg-gradient-to-br from-pink-100 via-rose-100 to-rose-200 border-[4px] border-rose-300 p-6 rounded-3xl shadow-2xl h-full flex flex-col justify-between">
           <div>
-            <h2 className="text-xl font-bold text-center text-pink-700 mb-2 font-comic">
+            <h2 className="text-2xl font-extrabold text-center text-pink-800 mb-4 tracking-wide drop-shadow-sm flex items-center gap-2">
               💬 Chat del Equipo
             </h2>
+
             <ChatRoom teamId={teamId} />
           </div>
   
@@ -753,7 +754,7 @@ const handleListoParaFinalizar = () => {
                 {usuariosListos.map((user, index) => (
                   <span
                     key={index}
-                    className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                    className="flex items-center gap-2 bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full shadow transition-all hover:scale-105"
                   >
                     ✅ {user}
                   </span>
