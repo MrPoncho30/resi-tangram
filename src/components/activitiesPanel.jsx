@@ -15,6 +15,7 @@ import mariposa from '../assets/mariposa_tangram.png';
 import perro from '../assets/perro_tangram.png';
 import pez from '../assets/pez_tangram.png';
 import casa from '../assets/casa_tangram.png';
+import Swal from 'sweetalert2';
 
 const ActivitiesPanel = () => {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ const ActivitiesPanel = () => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedActivityId, setSelectedActivityId] = useState(null);
   const imagesPerPage = 4;
+  const [formError, setFormError] = useState('');
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [actividadAEditar, setActividadAEditar] = useState(null);
@@ -106,125 +108,180 @@ const ActivitiesPanel = () => {
     setActividades(actividades.filter(actividad => actividad.id !== id));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // const tiempoFormato = `${String(newActivity.horas).padStart(2, '0')}:${String(newActivity.minutos).padStart(2, '0')}:${String(newActivity.segundos).padStart(2, '0')}`;
-    
-  const horas = Math.max(0, Math.floor(newActivity.horas));
-  const minutos = Math.max(0, Math.floor(newActivity.minutos));
-  const segundos = Math.max(0, Math.floor(newActivity.segundos));
+  // Validaciones
+  const { nombre, horas, minutos, segundos, imagenes } = newActivity;
+
+  const tiempoTotal = parseInt(horas) + parseInt(minutos) + parseInt(segundos);
+
+  if (!nombre.trim()) {
+    setFormError('Todos los campos son obligatorios.');
+    setTimeout(() => setFormError(''), 3000);
+    return;
+  }
+
+  if (tiempoTotal === 0) {
+    setFormError('El tiempo debe ser mayor a 00:00:00.');
+    setTimeout(() => setFormError(''), 3000);
+    return;
+  }
+
+  if (!imagenes || imagenes.length < 2) {
+    setFormError('Debes seleccionar al menos 2 imágenes.');
+    setTimeout(() => setFormError(''), 3000);
+    return;
+  }
+
+  // Validación pasada — limpieza del error
+  setFormError('');
+
+  const horasVal = Math.max(0, Math.floor(horas));
+  const minutosVal = Math.max(0, Math.floor(minutos));
+  const segundosVal = Math.max(0, Math.floor(segundos));
 
   console.log('Datos de la actividad a enviar:', {
-    nombre: newActivity.nombre,
-    horas: horas,      
-    minutos: minutos,   
-    segundos: segundos, 
-    imagenes: newActivity.imagenes,
-    // fecha: new Date().toISOString().split('T')[0], // Fecha en formato YYYY-MM-DD
+    nombre,
+    horas: horasVal,
+    minutos: minutosVal,
+    segundos: segundosVal,
+    imagenes,
     salones: [],
     maestroId: teacherId,
     activo: false,
   });
 
   const nuevaActividad = {
-    nombre: newActivity.nombre,
-    horas: horas,       
-    minutos: minutos,   
-    segundos: segundos, 
-    banco_tangrams: newActivity.imagenes || [], 
-    salon: (newActivity.salones && newActivity.salones.length > 0) ? newActivity.salones[0] : null, 
+    nombre,
+    horas: horasVal,
+    minutos: minutosVal,
+    segundos: segundosVal,
+    banco_tangrams: imagenes || [],
+    salon: (newActivity.salones && newActivity.salones.length > 0) ? newActivity.salones[0] : null,
     maestroId: teacherId,
     activo: false
   };
-  
 
-console.log('datos enviando si o si', (nuevaActividad))
-  // Aquí agregamos el console.log para verificar los datos
+  console.log('datos enviando si o si', nuevaActividad);
   console.log('Datos que estamos enviando:', nuevaActividad);
   console.log('Tipo de datos:', typeof nuevaActividad);
-  console.log('Tipo de las imágenes:', Array.isArray(newActivity.imagenes) ? 'Array' : 'No es un array');
+  console.log('Tipo de las imágenes:', Array.isArray(imagenes) ? 'Array' : 'No es un array');
   console.log('Tipo de las horas:', typeof nuevaActividad.horas);
   console.log('Tipo de los minutos:', typeof nuevaActividad.minutos);
   console.log('Tipo de los segundos:', typeof nuevaActividad.segundos);
   console.log('Tipo del nombre:', typeof nuevaActividad.nombre);
   console.log('Tipo del estado: ', typeof nuevaActividad.activo);
 
-    try {
-      const accessToken = localStorage.getItem('accessToken');
+  try {
+    const accessToken = localStorage.getItem('accessToken');
 
-      if (!accessToken) {
-        console.error('No se encontró el token de acceso.');
-        return;
-      }
-
-      const response = await fetch('http://127.0.0.1:8000/actividades/api/crear_actividad/', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(nuevaActividad),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error al crear la actividad: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setActividades([...actividades, data]);
-
-      setShowForm(false);
-      setNewActivity({ nombre: '', horas: 0, minutos: 0, segundos: 0, imagenes: [] });
-    } catch (error) {
-      console.error('Error al crear la actividad:', error);
+    if (!accessToken) {
+      console.error('No se encontró el token de acceso.');
+      return;
     }
-  };
 
-  const handleEliminarActividad = async (id) => {
-    const confirmDelete = window.confirm('¿Estás seguro de que quieres eliminar esta actividad?');
-    if (!confirmDelete) return;
-  
-    try {
-      const accessToken = localStorage.getItem('accessToken');
-      
-      if (!accessToken) {
-        console.error('No se encontró el token de acceso.');
-        return;
-      }
-  
-      const response = await fetch(`http://127.0.0.1:8000/actividades/api/eliminar_actividad/${id}/`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Error al eliminar actividad: ${response.statusText}`);
-      }
-  
-      // Actualizamos el estado de actividades después de eliminar la actividad
-      setActividades(actividades.filter(actividad => actividad.id !== id));
-    } catch (error) {
-      console.error('Error al eliminar la actividad:', error);
+    const response = await fetch('http://127.0.0.1:8000/actividades/api/crear_actividad/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(nuevaActividad),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error al crear la actividad: ${response.statusText}`);
     }
-  };
-  
+
+    const data = await response.json();
+    setActividades([...actividades, data]);
+
+    setShowForm(false);
+    setNewActivity({ nombre: '', horas: 0, minutos: 0, segundos: 0, imagenes: [] });
+  } catch (error) {
+    console.error('Error al crear la actividad:', error);
+  }
+};
+
+
+ const handleEliminarActividad = async (id) => {
+  const confirmDelete = await Swal.fire({
+    title: '¿Estás seguro?',
+    text: 'Esta acción eliminará la actividad permanentemente.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+  });
+
+  if (!confirmDelete.isConfirmed) return;
+
+  try {
+    const accessToken = localStorage.getItem('accessToken');
+
+    if (!accessToken) {
+      console.error('No se encontró el token de acceso.');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Sin sesión',
+        text: 'No se encontró el token de acceso. Inicia sesión nuevamente.',
+      });
+      return;
+    }
+
+    const response = await fetch(`http://127.0.0.1:8000/actividades/api/eliminar_actividad/${id}/`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error al eliminar actividad: ${response.statusText}`);
+    }
+
+    // ✅ Actualiza el estado eliminando la actividad
+    setActividades(prev => prev.filter(actividad => actividad.id !== id));
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'Actividad eliminada',
+      text: 'La actividad fue eliminada exitosamente.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+
+  } catch (error) {
+    console.error('Error al eliminar la actividad:', error);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo eliminar la actividad.',
+    });
+  }
+};
+
 const handleEditarActividad = async (actividad) => {
   try {
     const accessToken = localStorage.getItem('accessToken');
-      
-      if (!accessToken) {
-        console.error('No se encontró el token de acceso.');
-        return;
-      }
+
+    if (!accessToken) {
+      console.error('No se encontró el token de acceso.');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Sin sesión',
+        text: 'No se encontró el token de acceso. Inicia sesión de nuevo.',
+      });
+      return;
+    }
+
     const response = await fetch(`http://127.0.0.1:8000/actividades/api/editar_actividad/${actividad.id}/`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         nombre: actividad.nombre,
@@ -239,14 +296,30 @@ const handleEditarActividad = async (actividad) => {
 
     if (response.ok) {
       console.log("✅ Actividad editada con éxito:", data);
-      alert("Actividad actualizada.");
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Éxito!',
+        text: 'Actividad actualizada correctamente.',
+        timer: 2000,
+        showConfirmButton: false
+      });
+            await fetchActividades();
+
     } else {
       console.error("❌ Error al editar:", data);
-      alert(data.error || "Error al editar la actividad.");
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al editar',
+        text: data.error || 'Ocurrió un error al editar la actividad.',
+      });
     }
   } catch (err) {
     console.error("❌ Error de red:", err);
-    alert("No se pudo conectar con el servidor.");
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error de red',
+      text: 'No se pudo conectar con el servidor.',
+    });
   }
 };
 
@@ -275,26 +348,25 @@ const handleEditarActividad = async (actividad) => {
   
   const handleAssignActivityToClass = async () => {
     const actividadId = actividades.find(actividad => actividad.id === selectedActivityId)?.id;
-    // Aquí, `selectedActivityId` es el ID de la actividad seleccionada. Puedes obtenerlo de un estado o de una selección.
   
     if (!actividadId) {
       console.error('No se encontró la actividad con el ID proporcionado');
       return;
     }
   
-    const salonId = selectedSalones[0];  // Obtener el ID del salón seleccionado
+    const salonId = selectedSalones[0];  
   
     try {
       // Haciendo la llamada POST a la API
       const response = await fetch('http://127.0.0.1:8000/actividades/api/asignar_salon_actividad/', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`, // Agrega el token de acceso si es necesario
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`, 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          actividad_id: actividadId,  // Enviar el ID de la actividad
-          salon_id: salonId          // Enviar el ID del salón
+          actividad_id: actividadId,
+          salon_id: salonId
         })
       });
   
@@ -302,11 +374,10 @@ const handleEditarActividad = async (actividad) => {
   
       if (response.ok) {
         console.log('Respuesta:', data.success);
-        // Aquí puedes manejar la respuesta, por ejemplo, mostrar un mensaje de éxito
+        await fetchActividades();
         setShowAssignModal(false)
       } else {
         console.error('Error:', data.error);
-        // Maneja el error si la respuesta no es OK
       }
     } catch (error) {
       console.error('Error al asignar actividad:', error);
@@ -370,8 +441,7 @@ const handleEditarActividad = async (actividad) => {
     }
   };
 
-  useEffect(() => {
-    const fetchActividades = async () => {
+const fetchActividades = async () => {
       try {
         const accessToken = localStorage.getItem('accessToken');
   
@@ -398,7 +468,8 @@ const handleEditarActividad = async (actividad) => {
         console.error('Error al obtener actividades:', error);
       }
     };
-  
+
+  useEffect(() => {
     fetchActividades();
   }, []);
   
@@ -421,56 +492,124 @@ const handleEditarActividad = async (actividad) => {
             </button>
             
             {showForm && (
-              <form onSubmit={handleSubmit} className="mb-4 bg-white p-4 rounded-lg shadow-md">
-                <label className="block mb-2">
-                  Nombre de la Actividad:
-                  <input type="text" value={newActivity.nombre} onChange={(e) => setNewActivity({ ...newActivity, nombre: e.target.value })} className="border p-2 w-full rounded-md" required />
+              <>
+              {formError && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 border border-red-400 rounded-md shadow-sm text-sm">
+                  {formError}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="mb-4 bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                <label className="block mb-4 font-semibold text-gray-700">
+                  Nombre de la Actividad: <span className="text-red-500">*</span>
+                  <input
+                    type="text"
+                    value={newActivity.nombre}
+                    onChange={(e) => setNewActivity({ ...newActivity, nombre: e.target.value })}
+                    className="border border-gray-300 mt-2 p-2 w-full rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    required
+                  />
                 </label>
-                <label className="block mb-2">
-                  Tiempo de la Actividad:
-                  <div className="flex gap-2">
-                    
-                    <div className="flex flex-col items-center">
-                      <input type="number" min="0" value={newActivity.horas} onChange={(e) => setNewActivity({...newActivity, horas: parseInt(e.target.value) || 0 })}
-                        className="border p-2 w-16 rounded-md text-center" placeholder="hh" required/>
-                      <span className="text-sm text-gray-600 mt-1">hh</span>
-                    </div>
-                    <span>:</span>
 
+                <label className="block mb-4 font-semibold text-gray-700">
+                  Tiempo de la Actividad: <span className="text-red-500">*</span>
+                  <div className="flex gap-3 mt-2">
                     <div className="flex flex-col items-center">
-                      <input type="number" min="0" max="59" value={newActivity.minutos} onChange={(e) => setNewActivity({ ...newActivity, minutos: parseInt(e.target.value) || 0 })}
-                        className="border p-2 w-16 rounded-md text-center" placeholder="mm" required />
-                      <span className="text-sm text-gray-600 mt-1">mm</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newActivity.horas}
+                        onChange={(e) => setNewActivity({ ...newActivity, horas: parseInt(e.target.value) || 0 })}
+                        className="border border-gray-300 p-2 w-16 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        placeholder="hh"
+                        required
+                      />
+                      <span className="text-xs text-gray-500 mt-1">hh</span>
                     </div>
-                    <span>:</span>
-
+                    <span className="text-lg mt-2">:</span>
                     <div className="flex flex-col items-center">
-                      <input type="number" min="0" max="59" value={newActivity.segundos} onChange={(e) => setNewActivity({ ...newActivity, segundos: parseInt(e.target.value) || 0 })}
-                        className="border p-2 w-16 rounded-md text-center" placeholder="ss" required />
-                      <span className="text-sm text-gray-600 mt-1">ss</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={newActivity.minutos}
+                        onChange={(e) => setNewActivity({ ...newActivity, minutos: parseInt(e.target.value) || 0 })}
+                        className="border border-gray-300 p-2 w-16 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        placeholder="mm"
+                        required
+                      />
+                      <span className="text-xs text-gray-500 mt-1">mm</span>
+                    </div>
+                    <span className="text-lg mt-2">:</span>
+                    <div className="flex flex-col items-center">
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={newActivity.segundos}
+                        onChange={(e) => setNewActivity({ ...newActivity, segundos: parseInt(e.target.value) || 0 })}
+                        className="border border-gray-300 p-2 w-16 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        placeholder="ss"
+                        required
+                      />
+                      <span className="text-xs text-gray-500 mt-1">ss</span>
                     </div>
                   </div>
                 </label>
 
-                <div className="mt-4">
-                  <h3>Selecciona imágenes:</h3>
-                  <div className="flex justify-between items-center mt-4">
-                    <button type="button" onClick={goToPreviousPage} disabled={currentIndex === 0} className="bg-gray-500 text-white py-2 px-4 rounded-md"> <FaArrowLeft /> </button>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="mt-6">
+                  <h3 className="font-semibold text-gray-700 mb-2">
+                    Selecciona imágenes: <span className="text-red-500">*</span>
+                  </h3>
+                  <div className="flex justify-between items-center">
+                    <button
+                      type="button"
+                      onClick={goToPreviousPage}
+                      disabled={currentIndex === 0}
+                      className="bg-gray-500 text-white py-2 px-3 rounded-full hover:bg-gray-600"
+                    >
+                      <FaArrowLeft />
+                    </button>
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mx-4">
                       {bancoTangrams.slice(currentIndex, currentIndex + imagesPerPage).map((imagen, index) => (
-                        <div key={index} onClick={() => handleImageSelect(imagen)} className={`cursor-pointer p-2 border ${newActivity.imagenes.includes(imagen) ? 'border-blue-500' : 'border-gray-300'}`}>
-                          <img src={imagen} alt={`Tangram ${index + 1}`} className="w-full h-auto" />
+                        <div
+                          key={index}
+                          onClick={() => handleImageSelect(imagen)}
+                          className={`cursor-pointer border-2 rounded-md overflow-hidden ${
+                            newActivity.imagenes.includes(imagen) ? 'border-blue-500' : 'border-gray-300'
+                          }`}
+                        >
+                          <img src={imagen} alt={`Tangram ${index + 1}`} className="w-full h-20 object-cover" />
                         </div>
                       ))}
                     </div>
-                    <button type="button" onClick={goToNextPage} disabled={currentIndex + imagesPerPage >= bancoTangrams.length} className="bg-gray-500 text-white py-2 px-4 rounded-md"> <FaArrowRight /> </button>
+                    <button
+                      type="button"
+                      onClick={goToNextPage}
+                      disabled={currentIndex + imagesPerPage >= bancoTangrams.length}
+                      className="bg-gray-500 text-white py-2 px-3 rounded-full hover:bg-gray-600"
+                    >
+                      <FaArrowRight />
+                    </button>
                   </div>
                 </div>
-                      <br></br>
-                <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded-md mr-2">Guardar</button>
-                <button type="button" onClick={() => setShowForm(false)} className="bg-gray-500 text-white py-2 px-4 rounded-md">Cancelar</button>
+
+                <div className="mt-6 flex gap-3">
+                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-5 rounded-md">
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-5 rounded-md"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </form>
+               </>
             )}
+
 
 <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
   <table className="w-full">
@@ -478,7 +617,7 @@ const handleEditarActividad = async (actividad) => {
       <tr className="bg-gray-200 text-gray-700 text-sm uppercase tracking-wider">
         <th className="p-3 border-r last:border-r-0">Nombre</th>
         <th className="p-3 border-r last:border-r-0">Tiempo</th>
-        <th className="p-3 border-r last:border-r-0">Salón</th>
+        <th className="p-3 border-r last:border-r-0">Grupo</th>
         <th className="p-3 border-r last:border-r-0">Estado</th>
         <th className="p-3">Acciones</th>
       </tr>
@@ -492,9 +631,14 @@ const handleEditarActividad = async (actividad) => {
               {`${String(actividad.horas).padStart(2, '0')}:${String(actividad.minutos).padStart(2, '0')}:${String(actividad.segundos).padStart(2, '0')}`}
             </td>
             <td className="p-4 text-sm text-gray-800 border-r last:border-r-0">
-              {actividad.salon 
-                ? `${actividad.salon.grado}º ${actividad.salon.grupo} (${actividad.salon.ciclo_escolar_inicio}-${actividad.salon.ciclo_escolar_fin})`
-                : 'No asignado'}
+{actividad.salon &&
+ actividad.salon.grado !== null &&
+ actividad.salon.grupo !== null &&
+ actividad.salon.ciclo_escolar_inicio !== null &&
+ actividad.salon.ciclo_escolar_fin !== null
+  ? `${actividad.salon.grado}º ${actividad.salon.grupo} (${actividad.salon.ciclo_escolar_inicio}-${actividad.salon.ciclo_escolar_fin})`
+  : 'Sin asignar'}
+
             </td>
             <td className="p-4 border-r last:border-r-0">
               <label
@@ -687,7 +831,7 @@ const handleEditarActividad = async (actividad) => {
 
 <button
   onClick={async () => {
-    await handleEditarActividad(actividadAEditar);
+await handleEditarActividad(actividadAEditar, fetchActividades);
     cerrarModalEditar();
   }}
   className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"

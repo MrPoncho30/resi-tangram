@@ -142,7 +142,11 @@ function LoginStudent({ onJoin }) {
               placeholder="Código del equipo"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
               value={teamCode}
-              onChange={(e) => setTeamCode(e.target.value)}
+              onChange={(e) => {
+                const valor = e.target.value;
+                const limpio = valor.replace(/\s+/g, '').slice(0, 6);
+                setTeamCode(limpio);
+              }}
             />
             <button 
               type="submit" 

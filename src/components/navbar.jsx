@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaChalkboardTeacher, FaTasks, FaFileAlt, FaDoorOpen } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -14,11 +14,22 @@ const Navbar = () => {
   }
 
   const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: '¿Deseas cerrar sesión?',
+      text: 'Tendrás que iniciar sesión nuevamente para continuar.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cerrar sesión',
+      cancelButtonText: 'Cancelar',
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       const token = localStorage.getItem('authToken');
       if (!token) {
         console.warn('No hay token de autenticación. Redirigiendo a login.');
-        navigate('/loginTeacher');
+        navigate('/loginTeacher', { replace: true });
         return;
       }
 
@@ -37,17 +48,37 @@ const Navbar = () => {
 
       if (!response.ok) {
         console.error('Error al cerrar sesión:', response.statusText);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo cerrar sesión correctamente.',
+        });
         return;
       }
 
       localStorage.removeItem('authToken');
-      navigate('/loginTeacher');
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Sesión cerrada',
+        text: 'Has cerrado sesión exitosamente.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+
+      navigate('/loginTeacher', { replace: true });
+
     } catch (error) {
       console.error('Error en la solicitud de logout:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de red',
+        text: 'No se pudo conectar con el servidor.',
+      });
     }
   };
 
- const navItems = [
+  const navItems = [
     { path: "/salones", label: "Salones", icon: <FaChalkboardTeacher /> },
     { path: "/activitiesPanel", label: "Actividades", icon: <FaTasks /> },
     { path: "/evidencias", label: "Evidencias", icon: <FaFileAlt /> },

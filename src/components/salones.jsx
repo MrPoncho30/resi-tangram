@@ -17,6 +17,7 @@ const Salones = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedSalon, setSelectedSalon] = useState(null);
   const [editModal, setEditModal] = useState(false);
+  const [formError, setFormError] = useState(false);
 
   const [formData, setFormData] = useState({
     grado: '',
@@ -144,6 +145,14 @@ const Salones = () => {
 
   // Registrar un nuevo salón
   const handleRegisterSalon = async () => {
+      const { grado, grupo, ciclo_escolar_inicio, ciclo_escolar_fin } = formData;
+
+  // Validación de campos vacíos
+  if (!grado || !grupo || !ciclo_escolar_inicio || !ciclo_escolar_fin) {
+    setFormError(true);
+    setTimeout(() => setFormError(false), 3000); // Oculta después de 3s
+    return;
+  }
     const teacherId = localStorage.getItem("maestro");
 
     if (!teacherId) {
@@ -222,7 +231,11 @@ const Salones = () => {
         icon: "success"
       });
   
-      fetchSalones();
+// Si fetchSalones funciona bien
+await fetchSalones();
+
+// O como fallback inmediato
+setSalones(prev => prev.filter(salon => salon.id !== salonId));
     } catch (error) {
       console.error('Error eliminando salón:', error);
       Swal.fire({
@@ -304,7 +317,7 @@ return (
     <Navbar />
     <div className="flex-1 p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Salones</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Grupos</h1>
         <button
           onClick={() => navigate(-1)}
           className="flex items-center text-gray-700 hover:text-gray-900"
@@ -317,7 +330,7 @@ return (
         onClick={() => setShowModal(true)}
         className="mb-6 py-2.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-md transition-all duration-300"
       >
-        + Registrar Salón
+        + Registrar Grupo
       </button>
 
       <div className="overflow-x-auto p-2">{renderTable()}</div>
@@ -377,76 +390,98 @@ return (
     )}
 
     {/* Modal de Registro */}
-    {showModal && (
-      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-        <div className="bg-white p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto">
-          <h2 className="text-xl font-bold mb-4">Registrar Salón</h2>
-          <form>
-            <div className="mb-4">
-              <label className="block text-gray-700">Grado</label>
-              <select
-                value={formData.grado}
-                onChange={(e) => setFormData(prev => ({ ...prev, grado: e.target.value }))}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              >
-                <option value="">Seleccione un grado</option>
-                {[1, 2, 3, 4, 5, 6].map(grado => (
-                  <option key={grado} value={grado}>{grado}</option>
-                ))}
-              </select>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Grupo</label>
-              <select
-                value={formData.grupo}
-                onChange={(e) => setFormData(prev => ({ ...prev, grupo: e.target.value }))}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              >
-                <option value="">Seleccione un grupo</option>
-                {['A', 'B', 'C', 'D'].map(grupo => (
-                  <option key={grupo} value={grupo}>{grupo}</option>
-                ))}
-              </select>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Ciclo Escolar Inicio</label>
-              <input
-                type="number"
-                value={formData.ciclo_escolar_inicio}
-                onChange={(e) => setFormData(prev => ({ ...prev, ciclo_escolar_inicio: e.target.value }))}
-                className="w-full p-2 border border-gray-300 rounded-md"
-                onKeyDown={(e) => e.key === 'e' && e.preventDefault()}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Ciclo Escolar Fin</label>
-              <input
-                type="number"
-                value={formData.ciclo_escolar_fin}
-                onChange={(e) => setFormData(prev => ({ ...prev, ciclo_escolar_fin: e.target.value }))}
-                className="w-full p-2 border border-gray-300 rounded-md"
-                onKeyDown={(e) => e.key === 'e' && e.preventDefault()}
-              />
-            </div>
-            <div className="flex justify-center gap-4">
-              <button
-                type="button"
-                onClick={handleRegisterSalon}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
-              >
-                Registrar
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
+{showModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto">
+      <h2 className="text-xl font-bold mb-4">Registrar Salón</h2>
+
+      {formError && (
+        <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-sm">
+          Todos los campos son obligatorios.
         </div>
-      </div>
+      )}
+
+      <form>
+        <div className="mb-4">
+          <label className="block text-gray-700">
+            Grado <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={formData.grado}
+            onChange={(e) => setFormData(prev => ({ ...prev, grado: e.target.value }))}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          >
+            <option value="">Seleccione un grado</option>
+            {[1, 2, 3, 4, 5, 6].map(grado => (
+              <option key={grado} value={grado}>{grado}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-gray-700">
+            Grupo <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={formData.grupo}
+            onChange={(e) => setFormData(prev => ({ ...prev, grupo: e.target.value }))}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          >
+            <option value="">Seleccione un grupo</option>
+            {['A', 'B', 'C', 'D'].map(grupo => (
+              <option key={grupo} value={grupo}>{grupo}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-gray-700">
+            Ciclo Escolar Inicio <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            value={formData.ciclo_escolar_inicio}
+            onChange={(e) => setFormData(prev => ({ ...prev, ciclo_escolar_inicio: e.target.value }))}
+            className="w-full p-2 border border-gray-300 rounded-md"
+            onKeyDown={(e) => e.key === 'e' && e.preventDefault()}
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-gray-700">
+            Ciclo Escolar Fin <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            value={formData.ciclo_escolar_fin}
+            onChange={(e) => setFormData(prev => ({ ...prev, ciclo_escolar_fin: e.target.value }))}
+            className="w-full p-2 border border-gray-300 rounded-md"
+            onKeyDown={(e) => e.key === 'e' && e.preventDefault()}
+          />
+        </div>
+
+        <div className="flex justify-center gap-4">
+          <button
+            type="button"
+            onClick={handleRegisterSalon}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
+          >
+            Registrar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowModal(false);
+              setFormError(false);
+            }}
+            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
     )}
   </div>
 );
