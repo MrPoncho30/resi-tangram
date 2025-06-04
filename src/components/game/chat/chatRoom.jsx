@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import { useLocation } from "react-router-dom";
 import useWebSocket from "react-use-websocket";
+
 
 const ChatRoom = () => {
   const location = useLocation();
@@ -12,6 +13,7 @@ const ChatRoom = () => {
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [replyToIndex, setReplyToIndex] = useState(null);
+  const messagesEndRef = useRef(null);
 
   const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
     `ws://127.0.0.1:8000/ws/sesiones/${codigoEquipo}/`,
@@ -70,6 +72,11 @@ const ChatRoom = () => {
       ]);
     }
   }, [lastJsonMessage]);
+useEffect(() => {
+  if (messagesEndRef.current) {
+    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+  }
+}, [messages]);
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
@@ -130,6 +137,7 @@ const ChatRoom = () => {
           </button>
         </div>
       ))}
+        <div ref={messagesEndRef} />
     </div>
 
     {replyToIndex !== null && (
@@ -147,21 +155,22 @@ const ChatRoom = () => {
       </div>
     )}
 
-    <div className="flex items-center gap-2">
-      <input
-        type="text"
-        value={newMessage}
-        onChange={(e) => setNewMessage(e.target.value)}
-        placeholder="Escribe un mensaje..."
-        className="flex-1 px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm shadow-sm"
-      />
-      <button
-        onClick={handleSendMessage}
-        className="px-5 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold text-sm shadow-md hover:from-blue-600 hover:to-indigo-600 transition-all"
-      >
-        Enviar
-      </button>
-    </div>
+    <div className="flex flex-col sm:flex-row items-stretch gap-2">
+  <input
+    type="text"
+    value={newMessage}
+    onChange={(e) => setNewMessage(e.target.value)}
+    placeholder="Escribe un mensaje..."
+    className="w-full sm:flex-1 px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm shadow-sm"
+  />
+  <button
+    onClick={handleSendMessage}
+    className="px-5 py-3 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold text-sm shadow-md hover:from-blue-600 hover:to-indigo-600 transition-all"
+  >
+    Enviar
+  </button>
+</div>
+
   </div>
 );
 

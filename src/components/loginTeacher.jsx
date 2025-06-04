@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaLock } from 'react-icons/fa';
-import Swal from 'sweetalert2'; // 🔔 Importación de SweetAlert2
+import Swal from 'sweetalert2'; 
 
 import myImage from '../assets/img_login_teacher.jpg'; 
 import myImage2 from '../assets/fondo.png'; 

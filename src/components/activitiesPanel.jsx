@@ -33,6 +33,7 @@ const ActivitiesPanel = () => {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [actividadAEditar, setActividadAEditar] = useState(null);
+const [errorImagenes, setErrorImagenes] = useState('');
 
   const abrirModalEditar = (actividad) => {
     setActividadAEditar({ ...actividad });
@@ -477,7 +478,7 @@ const fetchActividades = async () => {
   return (
         <div className="min-h-screen bg-gray-100 flex">
           <Navbar />
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-6 ml-60">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold text-gray-800">Panel de Actividades</h1>
               <button 
@@ -802,6 +803,10 @@ const fetchActividades = async () => {
       </div>
 
       <div className="mb-4">
+        {errorImagenes && (
+  <p className="text-red-500 text-sm mt-2">{errorImagenes}</p>
+)}
+
         <p className="font-semibold mb-2">Imágenes:</p>
         <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
           {bancoTangrams.map((imagen, index) => (
@@ -831,13 +836,20 @@ const fetchActividades = async () => {
 
 <button
   onClick={async () => {
-await handleEditarActividad(actividadAEditar, fetchActividades);
+    if ((actividadAEditar?.banco_tangrams?.length || 0) < 2) {
+      setErrorImagenes("Debes seleccionar al menos 2 imágenes para guardar la actividad.");
+      return;
+    }
+
+    setErrorImagenes(""); // Limpia el mensaje si pasa la validación
+    await handleEditarActividad(actividadAEditar, fetchActividades);
     cerrarModalEditar();
   }}
   className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
 >
   Actualizar
 </button>
+
 
       </div>
     </div>

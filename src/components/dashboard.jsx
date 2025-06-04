@@ -30,7 +30,7 @@ const Dashboard = () => {
 return (
   <div className="min-h-screen flex bg-gradient-to-r from-gray-100 to-gray-200">
     <Navbar />
-    <div className="flex-1 p-6">
+    <div className="flex-1 p-6 ml-60">
       <h1 className="text-3xl font-bold text-center text-gray-800 mb-10">
         Panel de Administrador - Profesor
       </h1>

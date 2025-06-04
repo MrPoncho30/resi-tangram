@@ -85,7 +85,7 @@ const Navbar = () => {
   ];
 
   return (
-    <div className="w-60 bg-white bg-opacity-20 backdrop-blur-xl border-r border-white/20 p-6 min-h-screen shadow-2xl">
+<div className="fixed left-0 top-0 h-screen w-60 bg-white bg-opacity-20 backdrop-blur-xl border-r border-white/20 p-6 shadow-2xl z-50">
       <h2 
         className="text-xl font-bold text-gray-800 mb-8 text-center cursor-pointer hover:text-blue-600 transition"
         onClick={() => navigate('/dashboard')}

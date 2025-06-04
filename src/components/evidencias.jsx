@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
 import { FaArrowLeft, FaSearch } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
 const Evidencias = () => {
   const navigate = useNavigate();
@@ -20,53 +21,54 @@ const Evidencias = () => {
   const [paginaActual, setPaginaActual] = useState(1);
   const evidenciasPorPagina = 5;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem('accessToken');
+useEffect(() => {
+  fetchEvidenciasCompletas();
+}, []);
+
   
-        const [evRes, actRes, salRes] = await Promise.all([
-          fetch('http://127.0.0.1:8000/evidencias/api/listar_evidencias/', {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          fetch('http://127.0.0.1:8000/actividades/api/listar_actividad/', {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          fetch('http://127.0.0.1:8000/salones/api/listar_salon/', {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-        ]);
-  
-        if (!evRes.ok) {
-          console.warn("Token expirado o no autorizado para evidencias");
-          setEvidencias([]);
-          setEvidenciasOriginales([]);
-        } else {
-          const evData = await evRes.json();
-          setEvidencias(Array.isArray(evData) ? evData : []);
-          setEvidenciasOriginales(Array.isArray(evData) ? evData : []);
-        }
-  
-        if (actRes.ok) {
-          const actData = await actRes.json();
-          setActividades(Array.isArray(actData) ? actData : []);
-        }
-  
-        if (salRes.ok) {
-          const salData = await salRes.json();
-          setSalones(Array.isArray(salData) ? salData : []);
-        }
-  
-      } catch (err) {
-        console.error('Error al cargar los datos:', err);
-        setEvidencias([]);
-        setEvidenciasOriginales([]);
-      }
-    };
-  
-    fetchData();
-  }, []);
-  
+  const fetchEvidenciasCompletas = async () => {
+  try {
+    const token = localStorage.getItem('accessToken');
+
+    const [evRes, actRes, salRes] = await Promise.all([
+      fetch('http://127.0.0.1:8000/evidencias/api/listar_evidencias/', {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      fetch('http://127.0.0.1:8000/actividades/api/listar_actividad/', {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      fetch('http://127.0.0.1:8000/salones/api/listar_salon/', {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+    ]);
+
+    if (!evRes.ok) {
+      console.warn("Token expirado o no autorizado para evidencias");
+      setEvidencias([]);
+      setEvidenciasOriginales([]);
+    } else {
+      const evData = await evRes.json();
+      setEvidencias(Array.isArray(evData) ? evData : []);
+      setEvidenciasOriginales(Array.isArray(evData) ? evData : []);
+    }
+
+    if (actRes.ok) {
+      const actData = await actRes.json();
+      setActividades(Array.isArray(actData) ? actData : []);
+    }
+
+    if (salRes.ok) {
+      const salData = await salRes.json();
+      setSalones(Array.isArray(salData) ? salData : []);
+    }
+
+  } catch (err) {
+    console.error('Error al cargar los datos:', err);
+    setEvidencias([]);
+    setEvidenciasOriginales([]);
+  }
+};
+
 
   const fetchEquipos = async (salonId) => {
     try {
@@ -102,10 +104,7 @@ const Evidencias = () => {
     if (salon) {
       filtradas = filtradas.filter(ev => ev.salon === salon.label);
     }
-    
-      
-      
-
+         
     if (equipo) {
       filtradas = filtradas.filter(ev => String(ev.equipo) === String(equipo));
     }
@@ -129,10 +128,19 @@ const Evidencias = () => {
   const evidenciasAMostrar = evidencias.slice(indiceInicio, indiceFin);
   const totalPaginas = Math.ceil(evidencias.length / evidenciasPorPagina);
 
+const handleEliminarEvidencia = async (evidenciaId) => {
+  const confirmDelete = await Swal.fire({
+    title: '¿Estás seguro?',
+    text: 'Esta acción eliminará la evidencia permanentemente.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  });
 
-  const handleEliminarEvidencia = async (evidenciaId) => {
-  const confirmDelete = window.confirm("¿Estás seguro de que quieres eliminar esta evidencia?");
-  if (!confirmDelete) return;
+  if (!confirmDelete.isConfirmed) return;
 
   try {
     const token = localStorage.getItem("accessToken");
@@ -145,23 +153,42 @@ const Evidencias = () => {
     });
 
     if (response.status === 204) {
-      alert("✅ Evidencia eliminada correctamente.");
-      // Aquí puedes actualizar tu estado si estás listando evidencias
+      await Swal.fire({
+        icon: 'success',
+        title: 'Eliminado',
+        text: 'Evidencia eliminada correctamente.',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      // 🔄 Refrescar la lista de evidencias
+await fetchEvidenciasCompletas();
+
     } else {
       const data = await response.json();
-      alert(`❌ Error al eliminar: ${data.error || "Ocurrió un error."}`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al eliminar',
+        text: data.error || 'Ocurrió un error inesperado.',
+      });
     }
+
   } catch (error) {
     console.error("❌ Error de red:", error);
-    alert("No se pudo conectar con el servidor.");
+    Swal.fire({
+      icon: 'error',
+      title: 'Error de conexión',
+      text: 'No se pudo conectar con el servidor.',
+    });
   }
 };
+
 
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
       <Navbar />
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 ml-60">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Panel de Evidencia</h1>
           <button

@@ -5,6 +5,7 @@ import Navbar from './navbar';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FaTrash } from "react-icons/fa";
 import { useLocation } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 
 const API_URL_CREATE = "http://127.0.0.1:8000/estudiantes/api/crear_estudiante/";
@@ -52,53 +53,69 @@ const ClassroomStudents = () => {
   const [equipoIdParaEditar, setEquipoIdParaEditar] = useState(null);
 
   const [showEditarModal, setShowEditarModal] = useState(false);
+  const [errores, setErrores] = useState({});
+  const [equipoError, setEquipoError] = useState('');
 
 
   // Función para abrir el modal de "Ver equipo" y obtener los alumnos
-  const handleOpenViewEquipoModal = async (equipoId) => {
-    setShowViewEquipoModal(true);
-    setSelectedEquipoId(equipoId);
-    setLoading(true);
-    setError("");
-  
-    try {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
-        console.error('No se encontró el token de acceso.');
-        return;
-      }
-  
-      const response = await fetch(`${API_URL_MEMBERS_TEAM}${equipoId}/`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error("Error al obtener los estudiantes");
-      }
-  
-      const data = await response.json();
-  
-      // Si no hay estudiantes, mostrar mensaje sin estudiantes
-      if (data.length === 0) {
-        setAlumnosEquipo([]); // Si no hay estudiantes en el equipo, lista vacía
-      } else {
-        setAlumnosEquipo(data); // Establecer los estudiantes del equipo
-      }
-    } catch (err) {
-      setError("Error al cargar los estudiantes.");
-    } finally {
-      setLoading(false);
+const handleOpenViewEquipoModal = async (equipoId) => {
+  setShowViewEquipoModal(true);
+  setSelectedEquipoId(equipoId);
+  setLoading(true);
+  setError(""); // Limpia errores previos
+  setAlumnosEquipo([]); // Limpia antes de cargar
+
+  try {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      console.error('No se encontró el token de acceso.');
+      return;
     }
-  };
-  
+
+    const response = await fetch(`${API_URL_MEMBERS_TEAM}${equipoId}/`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al obtener los estudiantes");
+    }
+
+    const data = await response.json();
+
+    if (data.length === 0) {
+      // ⚠️ No es error, solo no hay estudiantes
+      setAlumnosEquipo([]);
+      setError("No hay alumnos en el equipo.");
+    } else {
+      setAlumnosEquipo(data);
+    }
+
+  } catch (err) {
+    // ❌ Error real
+    setError("No hay estudiantes.");
+  } finally {
+    setLoading(false);
+  }
+};
+ 
 
 const handleEliminarEstudiante = async (id) => {
-  const confirmar = window.confirm("¿Estás seguro de que deseas eliminar a este estudiante del equipo?");
-  if (!confirmar) return;
+  const confirmar = await Swal.fire({
+    title: '¿Estás seguro?',
+    text: "El estudiante será removido del equipo.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  });
+
+  if (!confirmar.isConfirmed) return;
 
   try {
     const token = localStorage.getItem("accessToken");
@@ -116,17 +133,22 @@ const handleEliminarEstudiante = async (id) => {
     }
 
     const data = await response.json();
-    alert(data.mensaje);
 
-    // 🔄 Actualizar la lista general de alumnos
+    await Swal.fire({
+      title: 'Eliminado',
+      text: data.mensaje,
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false
+    });
+
+    // 🔄 Actualizar estados
     setAlumnos(prev => prev.map(al => 
       al.id === id ? { ...al, equipo: null } : al
     ));
 
-    // 🔄 Actualizar los alumnos dentro del modal de equipo si está abierto
     setAlumnosEquipo(prev => prev.filter(est => est.id !== id));
 
-    // 🔄 (Opcional) Actualizar equipos si manejas estado de `equipos` con estudiantes anidados
     setEquipos(prev => 
       prev.map(eq => ({
         ...eq,
@@ -138,12 +160,13 @@ const handleEliminarEstudiante = async (id) => {
 
   } catch (error) {
     console.error("❌ Error al eliminar estudiante:", error);
-    alert("Ocurrió un error al eliminar al estudiante.");
+    Swal.fire({
+      title: 'Error',
+      text: 'Ocurrió un error al eliminar al estudiante.',
+      icon: 'error'
+    });
   }
 };
-
-
-
 
   const handleCloseViewEquipoModal = () => {
     setShowViewEquipoModal(false);
@@ -151,7 +174,6 @@ const handleEliminarEstudiante = async (id) => {
     setAlumnosEquipo([]); // Limpiar los estudiantes del modal
   };
   
-    
     // Función para obtener los alumnos desde la API
   const fetchAlumnos = async () => {
     try {
@@ -281,32 +303,68 @@ const fetchEquiposConEstado = async () => {
     fetchEquiposConEstado(); //LLamamos a la funcion para obtener estado de los equipos
   }, [id]);
 
-  
   // Registrar alumno en la API
-  const handleRegisterAlumno = async () => {
-    try {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
-        console.error('No hay token');
-        return;
-      }
-      console.log('Datos que se envían:', { ...formData });
-      const response = await fetch(API_URL_CREATE, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
-        body: JSON.stringify({ ...formData }),
-      });
 
-      if (!response.ok) throw new Error("Error registrando alumno");
+const handleRegisterAlumno = async () => {
+  // Validación de campos obligatorios
+  const nuevosErrores = {};
+  if (!formData.nombre) nuevosErrores.nombre = "El nombre es obligatorio";
+  if (!formData.apellidos) nuevosErrores.apellidos = "Los apellidos son obligatorios";
+  if (!formData.nickname) nuevosErrores.nickname = "El nickname es obligatorio";
 
-      const newAlumno = await response.json();
-      setAlumnos([...alumnos, newAlumno]);
-      setShowModal(false);
-      setFormData({ nombre: '', apellidos: '', nickname: '' });
-    } catch (error) {
-      console.error("Error registrando alumno:", error);
+  if (Object.keys(nuevosErrores).length > 0) {
+    setErrores(nuevosErrores);
+    return;
+  }
+
+  try {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      console.error('No hay token');
+      return;
     }
-  };
+
+    console.log('Datos que se envían:', { ...formData });
+
+    const response = await fetch(API_URL_CREATE, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`
+      },
+      body: JSON.stringify({ ...formData }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Detalles del error:", errorData);
+      throw new Error("Error registrando alumno");
+    }
+
+    const newAlumno = await response.json();
+
+    setAlumnos([...alumnos, newAlumno]);
+
+    // Limpiar formulario conservando salon_id y equipo
+    setFormData({
+      nombre: '',
+      apellidos: '',
+      nickname: '',
+      salon_id: id,
+      equipo: null
+    });
+
+    setErrores({});
+    setShowModal(false);
+
+    // Actualizar la lista
+    await fetchAlumnos();
+
+  } catch (error) {
+    console.error("Error registrando alumno:", error);
+  }
+};
+
   
   // Al hacer clic en "Registrar Alumno"
 const handleRegistrarAlumnoClick = () => {
@@ -324,7 +382,6 @@ const handleEditAlumno = (alumno) => {
   });
   setShowEditarModal(true); // ← Usa el modal de edición, no el de registro
 };
-
 
   // Actualizar alumno en la API
 const handleUpdateAlumno = async () => {
@@ -374,33 +431,55 @@ const handleUpdateAlumno = async () => {
   }
 };
 
-
-
   // Eliminar alumno
-  const handleDeleteAlumno = async (alumnoId) => {
-    const confirmDelete = window.confirm('¿Estás seguro de que quieres eliminar este alumno?');
-    if (!confirmDelete) return;
+const handleDeleteAlumno = async (alumnoId) => {
+  const confirmDelete = await Swal.fire({
+    title: '¿Estás seguro?',
+    text: "El alumno será eliminado permanentemente.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  });
 
-    try {
-      const accessToken = localStorage.getItem('accessToken');
-      const response = await fetch(`${API_URL_DELETE.replace('alumno_id', alumnoId)}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        }
-      });
+  if (!confirmDelete.isConfirmed) return;
 
-      if (!response.ok) {
-        throw new Error(`Error al eliminar ALUMNO: ${response.statusText}`);
+  try {
+    const accessToken = localStorage.getItem('accessToken');
+    const response = await fetch(`${API_URL_DELETE.replace('alumno_id', alumnoId)}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       }
+    });
 
-      // Llamamos a la función para refrescar la lista de alumnos después de la eliminación
-      fetchAlumnos();  // Esto vuelve a cargar los alumnos
-    } catch (error) {
-      console.error('Error eliminando ALUMNO:', error);
+    if (!response.ok) {
+      throw new Error(`Error al eliminar ALUMNO: ${response.statusText}`);
     }
-  };
+
+    await Swal.fire({
+      title: 'Eliminado',
+      text: 'El alumno ha sido eliminado exitosamente.',
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false
+    });
+
+    // Refrescar la lista de alumnos
+    fetchAlumnos();
+
+  } catch (error) {
+    console.error('Error eliminando ALUMNO:', error);
+    Swal.fire({
+      title: 'Error',
+      text: 'Ocurrió un error al intentar eliminar al alumno.',
+      icon: 'error'
+    });
+  }
+};
 
 
   // Crear equipo
@@ -426,13 +505,13 @@ const handleUpdateAlumno = async () => {
       setEquipos([...equipos, newEquipo]);
       setShowEquipoModal(false);
       setFormEquipoData({ nombre_equipo: '' });
+      fetchEquipos();
     } catch (error) {
       console.error("Error creando equipo:", error);
     }
   };
 
-
-// Asignar alumnos a un equipo
+  // Asignar alumnos a un equipo
 const handleAsignarAlumnos = async (equipoId) => {
   try {
     const accessToken = localStorage.getItem('accessToken');
@@ -479,7 +558,6 @@ const handleAsignarAlumnos = async (equipoId) => {
   }
 };
 
-
 const handleAsignarAlumnosClick = (equipoId) => {
   setSelectedEquipoId(equipoId); // Establece el ID del equipo
   setShowAsignarModal(true);     // Abre el modal de asignar alumnos
@@ -488,12 +566,17 @@ const handleAsignarAlumnosClick = (equipoId) => {
 
 const handleEditarEquipoName = async (equipoId) => {
   if (!nuevoNombreEquipo.trim()) {
-    alert("El nombre no puede estar vacío.");
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campo vacío',
+      text: 'El nombre no puede estar vacío.',
+    });
     return;
   }
 
   try {
     const token = localStorage.getItem("accessToken");
+
     const response = await fetch(`http://127.0.0.1:8000/equipos/api/editar_nombre_equipo/${equipoId}/`, {
       method: "PATCH",
       headers: {
@@ -508,23 +591,32 @@ const handleEditarEquipoName = async (equipoId) => {
     }
 
     const data = await response.json();
-    alert(data.mensaje);
 
-    // ✅ Cierra el modal y recarga la lista de equipos si tienes una función para eso
+    await Swal.fire({
+      icon: 'success',
+      title: 'Nombre actualizado',
+      text: data.mensaje,
+      timer: 2000,
+      showConfirmButton: false
+    });
+
     setShowEditarNombreModal(false);
 
-    // Opcional: recargar lista o actualizar estado local si ya tienes los equipos cargados
     setEquipos(prev =>
       prev.map(eq =>
         eq.id === equipoId ? { ...eq, nombre: nuevoNombreEquipo } : eq
       )
     );
+
   } catch (error) {
     console.error("❌ Error:", error);
-    alert("No se pudo actualizar el nombre del equipo.");
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo actualizar el nombre del equipo.',
+    });
   }
 };
-
 
 
 const handleCheckboxChange = (id) => {
@@ -548,8 +640,18 @@ const handleDeleteEquipo = async (equipoId) => {
       return;
     }
 
-    const confirmDelete = window.confirm("¿Estás seguro de que quieres eliminar este equipo?");
-    if (!confirmDelete) return;
+    const confirmDelete = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Este equipo será eliminado permanentemente.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirmDelete.isConfirmed) return;
 
     const response = await fetch(`${API_URL_DELETE_EQUIPO}${equipoId}/`, {
       method: 'DELETE',
@@ -564,16 +666,27 @@ const handleDeleteEquipo = async (equipoId) => {
       throw new Error(errorResponse.error || 'Error al eliminar el equipo');
     }
 
-    alert("Equipo eliminado correctamente");
+    await Swal.fire({
+      icon: 'success',
+      title: 'Equipo eliminado',
+      text: 'El equipo ha sido eliminado correctamente.',
+      timer: 2000,
+      showConfirmButton: false
+    });
 
     // Actualizar la lista de equipos
     setEquipos(equipos.filter(equipo => equipo.id !== equipoId));
 
   } catch (error) {
     console.error('Error eliminando equipo:', error);
-    alert(`Error: ${error.message}`);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.message || 'No se pudo eliminar el equipo.',
+    });
   }
 };
+
 
 const handleToggleEstado = async (equipoId) => {
   try {
@@ -616,7 +729,6 @@ const handleToggleEstado = async (equipoId) => {
     console.error('Error al actualizar el estado de la sesión:', error.message);
   }
 };
-
 
 const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handleAsignar, equipos }) => {
   // Filtrar los alumnos que ya tienen un equipo asignado
@@ -682,14 +794,14 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
   return (
     <div className="min-h-screen bg-gray-100 flex">
       <Navbar />
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 ml-60">
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Alumnos del Salón {grado}°{grupo}</h1>
 
         <button onClick={() => navigate(-1)} className="flex items-center text-gray-700 hover:text-gray-900 mb-4">
           <FaArrowLeft className="mr-2" /> Volver
         </button>
 
-        <div className="flex justify-between mb-6">
+        <div className="flex mb-6">
           <button
             onClick={() => setShowModal(true)}
             className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300 mr-2"
@@ -701,7 +813,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
             onClick={() => setShowEquipoModal(true)}
             className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
           >
-            Crear Equipo
+            Registrar Equipo
           </button>
 
         </div>
@@ -714,7 +826,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                 <tr>
                   <th className="px-4 py-2 text-left">Nombre(s)</th>
                   <th className="px-4 py-2 text-left">Apellidos(s)</th>
-                  <th className="px-4 py-2 text-left">NickName</th>
+                  <th className="px-4 py-2 text-left">Apodo</th>
                   <th className="px-4 py-2 text-left">Acciones</th>
                 </tr>
               </thead>
@@ -784,7 +896,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                       <td className="px-4 py-2">{equipo.nombre}</td>
                       <td className="px-4 py-2">{equipo.integrantes || 0}</td>
                       <td className="px-4 py-2">{equipo.codigo || "N/A"}</td>
-                      <td className="px-4 py-2 text-center">
+                      <td className="px-4 py-2">
                         <label className="inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
@@ -860,22 +972,91 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                 </div>
 
                 <div className="flex justify-center gap-4">
-<button
-          type="button"
-onClick={() => handleEditarEquipoName(equipoIdParaEditar)}
+                <button
+                          type="button"
+                onClick={() => handleEditarEquipoName(equipoIdParaEditar)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+                >
+                  Actualizar
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>setShowEditarNombreModal(false)}
 
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
-        >
-          Actualizar
-        </button>
-        <button
-          type="button"
-          onClick={() =>setShowEditarNombreModal(false)}
+                  className="ml-2 bg-gray-500 text-white px-4 py-2 rounded-lg"
+                >
+                  Cancelar
+                </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
+        {/* Modal para registrar o editar alumnos */}
+        {showModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg w-96">
+              <h2 className="text-xl font-bold mb-4">Registrar Alumno</h2>
+              <form>
+                <div className="mb-4">
+                  <label className="block text-gray-700">
+                    Nombre <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  {errores.nombre && <p className="text-red-500 text-sm">{errores.nombre}</p>}
+                </div>
 
-          className="ml-2 bg-gray-500 text-white px-4 py-2 rounded-lg"
-        >
-          Cancelar
-        </button>
+                <div className="mb-4">
+                  <label className="block text-gray-700">
+                    Apellidos <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.apellidos}
+                    onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  {errores.apellidos && <p className="text-red-500 text-sm">{errores.apellidos}</p>}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-gray-700">
+                    Apodo <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nickname}
+                    onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  {errores.nickname && <p className="text-red-500 text-sm">{errores.nickname}</p>}
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleRegisterAlumno}
+                    className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+                  >
+                    Registrar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setFormData({ nombre: '', apellidos: '', nickname: '', salon_id: id, equipo: null });
+                      setErrores({});
+                    }}
+                    className="ml-2 py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+                  >
+                    Cancelar
+                  </button>
                 </div>
               </form>
             </div>
@@ -883,109 +1064,62 @@ onClick={() => handleEditarEquipoName(equipoIdParaEditar)}
         )}
 
 
-        {/* Modal para registrar o editar alumnos */}
-{showModal && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-    <div className="bg-white p-6 rounded-lg w-96">
-      <h2 className="text-xl font-bold mb-4">Registrar Alumno</h2>
-      <form>
-        <div className="mb-4">
-          <label className="block text-gray-700">Nombre</label>
-          <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full p-2 border border-gray-300 rounded-md" />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700">Apellidos</label>
-          <input type="text" value={formData.apellidos} onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })} className="w-full p-2 border border-gray-300 rounded-md" />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700">NickName</label>
-          <input type="text" value={formData.nickname} onChange={(e) => setFormData({ ...formData, nickname: e.target.value })} className="w-full p-2 border border-gray-300 rounded-md" />
-        </div>
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={handleRegisterAlumno}
-            className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
-          >
-            Registrar
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setShowModal(false);
-              setFormData({ nombre: '', apellidos: '', nickname: '', salon_id: id, equipo: null });
-            }}
-            className="ml-2 py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-all duration-300"
-          >
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
-
-{showEditarModal && editingAlumno && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white p-6 rounded-lg w-96">
-      <h2 className="text-xl font-bold mb-4">Editar Alumno</h2>
-      <form>
-        <div className="mb-4">
-          <label className="block text-gray-700">Nombre</label>
-          <input
-            type="text"
-            value={formData.nombre}
-            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700">Apellidos</label>
-          <input
-            type="text"
-            value={formData.apellidos}
-            onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700">NickName</label>
-          <input
-            type="text"
-            value={formData.nickname}
-            onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
-        </div>
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={handleUpdateAlumno}
-            className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
-          >
-            Actualizar
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setShowEditarModal(false);
-              setEditingAlumno(null);
-              setFormData({ nombre: '', apellidos: '', nickname: '', salon_id: id, equipo: null });
-            }}
-            className="ml-2 py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-all duration-300"
-          >
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
-
-
-
-
+        {showEditarModal && editingAlumno && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded-lg w-96">
+              <h2 className="text-xl font-bold mb-4">Editar Alumno</h2>
+              <form>
+                <div className="mb-4">
+                  <label className="block text-gray-700">Nombre</label>
+                  <input
+                    type="text"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700">Apellidos</label>
+                  <input
+                    type="text"
+                    value={formData.apellidos}
+                    onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700">NickName</label>
+                  <input
+                    type="text"
+                    value={formData.nickname}
+                    onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleUpdateAlumno}
+                    className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+                  >
+                    Actualizar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditarModal(false);
+                      setEditingAlumno(null);
+                      setFormData({ nombre: '', apellidos: '', nickname: '', salon_id: id, equipo: null });
+                    }}
+                    className="ml-2 py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Modal para crear equipo */}
         {showEquipoModal && (
@@ -994,31 +1128,46 @@ onClick={() => handleEditarEquipoName(equipoIdParaEditar)}
               <h2 className="text-xl font-bold mb-4">Crear Equipo</h2>
               <form>
                 <div className="mb-4">
-                  <label className="block text-gray-700">Nombre del Equipo</label>
+                  <label className="block text-gray-700">
+                    Nombre del Equipo <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={formEquipoData.nombre_equipo}
-                    onChange={(e) => setFormEquipoData({ ...formEquipoData, nombre_equipo: e.target.value })}
+                    onChange={(e) => {
+                      setFormEquipoData({ ...formEquipoData, nombre_equipo: e.target.value });
+                      setEquipoError(''); // limpiar error al escribir
+                    }}
                     className="w-full p-2 border border-gray-300 rounded-md"
                   />
+                  {equipoError && <p className="text-red-500 text-sm">{equipoError}</p>}
                 </div>
+
                 <div className="flex justify-end">
-<button
-  type="button"
-  onClick={handleCreateEquipo}
-  className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
->
-  Crear
-</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!formEquipoData.nombre_equipo.trim()) {
+                        setEquipoError('Por favor ingresa el nombre del equipo');
+                        return;
+                      }
+                      handleCreateEquipo();
+                    }}
+                    className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+                  >
+                    Crear
+                  </button>
 
-<button
-  type="button"
-  onClick={() => setShowEquipoModal(false)}
-  className="ml-2 py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-all duration-300"
->
-  Cancelar
-</button>
-
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEquipoModal(false);
+                      setEquipoError('');
+                    }}
+                    className="ml-2 py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+                  >
+                    Cancelar
+                  </button>
                 </div>
               </form>
             </div>
@@ -1037,51 +1186,43 @@ onClick={() => handleEditarEquipoName(equipoIdParaEditar)}
 
         {/* Modal de "Ver equipo" */}
         {showViewEquipoModal && (
-              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                <div className="bg-white p-5 rounded-lg shadow-lg w-1/3">
-                  <h2 className="text-xl font-bold mb-4">Estudiantes del Equipo</h2>
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-5 rounded-lg shadow-lg w-1/3">
+              <h2 className="text-xl font-bold mb-4">Estudiantes del Equipo</h2>
 
-                  {/* Mostrar loading o error */}
-                  {loading ? (
-                    <p className="text-center">Cargando...</p>
-                  ) : error ? (
-                    <p className="text-center text-red-500">{error}</p>
-                  ) : (
-                     <ul>
-                      {alumnosEquipo.length > 0 ? (
-                        alumnosEquipo.map((alumno) => (
-                          <li key={alumno.id} className="py-1 border-b flex justify-between items-center">
-                            <span>{alumno.nombre} {alumno.apellidos} - {alumno.nickname}</span>
-                            <FaTrash 
-                              className="text-red-500 cursor-pointer hover:text-red-700"
-                              onClick={() => handleEliminarEstudiante(alumno.id)}
-                              title="Eliminar estudiante"
-                            />
-                          </li>
-                        ))
-                      ) : (
-                        <p className="text-center">Sin estudiantes</p> 
-                      )}
-                    </ul>
+              {/* Mostrar loading, error o lista */}
+              {loading ? (
+                <p className="text-center">Cargando...</p>
+              ) : error ? (
+                <p className="text-center text-red-500">{error}</p>
+              ) : alumnosEquipo.length === 0 ? (
+                <p className="text-center text-gray-600">Sin estudiantes</p>
+              ) : (
+                <ul>
+                  {alumnosEquipo.map((alumno) => (
+                    <li key={alumno.id} className="py-1 border-b flex justify-between items-center">
+                      <span>{alumno.nombre} {alumno.apellidos} - {alumno.nickname}</span>
+                      <FaTrash 
+                        className="text-red-500 cursor-pointer hover:text-red-700"
+                        onClick={() => handleEliminarEstudiante(alumno.id)}
+                        title="Eliminar estudiante"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-
-                  )}
-
-<button
-  onClick={handleCloseViewEquipoModal}
-  className="mt-4 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
->
-  Cerrar
-</button>
-
-                </div>
-              </div>
-            )}
-
+              <button
+                onClick={handleCloseViewEquipoModal}
+                className="mt-4 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-semibold transition-all duration-300"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
-
-    
   );
 };
 

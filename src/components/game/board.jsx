@@ -95,7 +95,7 @@ const Board = () => {
       };
    
   
-      socket.current.onmessage = (e) => {
+         socket.current.onmessage = (e) => {
         const data = JSON.parse(e.data);
   
         if (data.tipo === "actualizar_tangram") {
@@ -238,7 +238,14 @@ const Board = () => {
           console.log("🚪 Redirigiendo al login desde broadcast...");
           navigate("/components/students/loginStudent", { replace: true });
         }
-        
+          // ✅ NUEVOS MENSAJES PARA ESTADÍSTICAS
+  else if (data.tipo === "registro_estadisticas_ok") {
+    console.log("✅ Estadísticas registradas correctamente para evidencia:", data.evidencia_id);
+    alert("🎉 Estadísticas registradas correctamente.");
+  } else if (data.tipo === "registro_estadisticas_error") {
+    console.error("❌ Error al registrar estadísticas:", data.error);
+    alert("❌ Ocurrió un error al registrar estadísticas.");
+  }
         
       };
     }, 100);
@@ -250,85 +257,113 @@ const Board = () => {
   }, [teamId]);
 
 
-  const handleFinalizar = async () => {
-    if (!boardRef.current) return;
-  
-    try {
-      const originalBoxShadow = boardRef.current.style.boxShadow;
-      const originalBorder = boardRef.current.style.border;
-  
-    // Ocultar elementos con clase "captura-ocultar"
-      const ocultar = document.querySelectorAll(".captura-ocultar");
-      ocultar.forEach((el) => (el.style.display = "none"));
+const handleFinalizar = async () => {
+  if (!boardRef.current) return;
 
-      boardRef.current.style.boxShadow = "none";
-      boardRef.current.style.border = "none";
-  
-      const canvas = await html2canvas(boardRef.current);
-      const dataUrl = canvas.toDataURL("image/png");
-    // Restaurar visibilidad
-      ocultar.forEach((el) => (el.style.display = ""));
+  try {
+    const originalBoxShadow = boardRef.current.style.boxShadow;
+    const originalBorder = boardRef.current.style.border;
 
-      boardRef.current.style.boxShadow = originalBoxShadow;
-      boardRef.current.style.border = originalBorder;
-  
-      const imagenesAEnviar = [...imagenesRef.current, dataUrl];
-  
-      if (imagenesAEnviar.length === 0) {
-        alert("No hay imágenes que enviar.");
-        return;
-      }
-  
-      const response = await fetch("http://127.0.0.1:8000/evidencias/api/crear_evidencia/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          actividad_id: actividad.id,
-          equipo_id: teamId,
-          codigo_sesion: codigoEquipo, // 👈 Necesario para el backend
-          imagenes: imagenesAEnviar,
-        }),
-      });
-  
-      const data = await response.json();
-  
-      if (response.ok) {
-        console.log("✅ Evidencia enviada:", data);
-        alert("Evidencia enviada con éxito 🎉");
-  
-        const evidenciaId = data.evidencia_id;
-  
-        socket.current?.send(
+    const ocultar = document.querySelectorAll(".captura-ocultar");
+    ocultar.forEach((el) => (el.style.display = "none"));
+
+    boardRef.current.style.boxShadow = "none";
+    boardRef.current.style.border = "none";
+
+    const canvas = await html2canvas(boardRef.current);
+    const dataUrl = canvas.toDataURL("image/png");
+
+    ocultar.forEach((el) => (el.style.display = ""));
+    boardRef.current.style.boxShadow = originalBoxShadow;
+    boardRef.current.style.border = originalBorder;
+
+    const imagenesAEnviar = [...imagenesRef.current, dataUrl];
+
+    if (imagenesAEnviar.length === 0) {
+      alert("No hay imágenes que enviar.");
+      return;
+    }
+
+    const response = await fetch("http://127.0.0.1:8000/evidencias/api/crear_evidencia/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        actividad_id: actividad.id,
+        equipo_id: teamId,
+        codigo_sesion: codigoEquipo,
+        imagenes: imagenesAEnviar,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log("✅ Evidencia enviada:", data);
+      alert("Evidencia enviada con éxito 🎉");
+
+      const evidenciaId = data.evidencia_id;
+
+      // Limpiar referencias
+      setImagenesCapturadas([]);
+      imagenesRef.current = [];
+      reiniciarTablero();
+
+      // 🔁 Esperar confirmación del backend vía WebSocket
+      let redirigido = false;
+
+      const confirmarRedireccion = (e) => {
+        const mensaje = JSON.parse(e.data);
+        if (
+          mensaje.tipo === "registro_estadisticas_ok" &&
+          mensaje.evidencia_id === evidenciaId
+        ) {
+          console.log("✅ Backend confirmó estadísticas. Redirigiendo...");
+          redirigido = true;
+          socket.current?.removeEventListener("message", confirmarRedireccion);
+          navigate("/components/students/loginStudent", { replace: true });
+        }
+      };
+
+      socket.current?.addEventListener("message", confirmarRedireccion);
+
+      // ⏱ Timeout de seguridad: forzar redirección si no llega confirmación
+      setTimeout(() => {
+        if (!redirigido) {
+          console.warn("⚠️ Timeout alcanzado. Redirigiendo de todos modos...");
+          socket.current?.removeEventListener("message", confirmarRedireccion);
+          navigate("/components/students/loginStudent", { replace: true });
+        }
+      }, 5000);
+
+      // Enviar evidencia por WebSocket
+      if (socket.current && socket.current.readyState === WebSocket.OPEN) {
+        socket.current.send(
           JSON.stringify({
             tipo: "registrar_evidencia",
             evidencia_id: evidenciaId,
             nickname: nickname,
           })
         );
-  
-        setImagenesCapturadas([]);
-        imagenesRef.current = [];
-        reiniciarTablero();
-  
-        window.history.pushState(null, null, window.location.href);
-        window.addEventListener("popstate", function () {
-          window.history.pushState(null, null, window.location.href);
-        });
-  
-        navigate("/components/students/loginStudent", { replace: true });
       } else {
-        console.error("❌ Error al guardar evidencia:", data);
-        alert("Ocurrió un error al enviar la evidencia.");
+        console.warn("⚠️ WebSocket no está abierto para registrar evidencia.");
       }
-    } catch (error) {
-      console.error("❌ Error de conexión:", error);
-      alert("Error de conexión con el servidor.");
-    }
-  };
-  
-  
-  
 
+      // Evitar botón atrás
+      window.history.pushState(null, null, window.location.href);
+      window.addEventListener("popstate", function () {
+        window.history.pushState(null, null, window.location.href);
+      });
+
+    } else {
+      console.error("❌ Error al guardar evidencia:", data);
+      alert("Ocurrió un error al enviar la evidencia.");
+    }
+  } catch (error) {
+    console.error("❌ Error de conexión:", error);
+    alert("Error de conexión con el servidor.");
+  }
+};
+  
   // Intervalo para verificar si la actividad sigue activa
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -355,7 +390,6 @@ const Board = () => {
     return () => clearInterval(interval);
   }, [codigoEquipo]);
   
-
       /// PRUEBA CHUY ///
       useEffect(() => {
         // Obtener cantidad de usuarios del equipo desde localStorage
@@ -367,8 +401,6 @@ const Board = () => {
       }, []);
       ///
   
-
-
   // Redirección automática cuando la actividad es desactivada
   useEffect(() => {
     if (!actividadActiva && alertaDesactivada) {
@@ -399,10 +431,8 @@ const Board = () => {
       </div>
     );
   }
-  
 
   // const handleReady = () => setIsPlaying(true);
-
 const handleDragStart = (e, id) => {
     if (!isPlaying) return;
     e.dataTransfer.setData("id", id.toString());
@@ -538,9 +568,6 @@ const handleDragStart = (e, id) => {
       );
     };
     
-    
-
-    // Inmediatamente después pon:
 const handleListoParaFinalizar = () => {
   socket.current?.send(
     JSON.stringify({
@@ -549,9 +576,6 @@ const handleListoParaFinalizar = () => {
     })
   );
 };
-    
-    ///
-
 
   const handleRotate = (id) => {
     if (!isPlaying) return;
@@ -585,12 +609,12 @@ const handleListoParaFinalizar = () => {
   }
 
   return (
-    <div className="h-auto bg-gradient-to-br from-blue-100 to-purple-200 overflow-hidden flex flex-col">
+<div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-200 overflow-hidden flex flex-col">
       <div className="flex-1 grid grid-cols-12 gap-4 p-4">
         
         {/* PIEZAS */}
         <div className="col-span-2 bg-yellow-100 border-[6px] border-yellow-400 rounded-3xl shadow-lg flex flex-col items-center py-4 h-full overflow-y-auto">
-          <h2 className="text-xl font-bold text-pink-600 mb-4 font-comic flex items-center gap-2">
+          <h2 className="text-2xl font-extrabold text-pink-600 mb-4 font-comic flex items-center gap-2">
             🧩 Piezas
           </h2>
           {piecesState.map((piece) => {
@@ -645,7 +669,7 @@ const handleListoParaFinalizar = () => {
             </>
           ) : (
             <div className="flex flex-col items-center text-center mt-10">
-              <h2 className="text-xl font-bold text-blue-800 mb-2 font-comic">
+              <h2 className="text-2xl font-extrabold text-blue-800 mb-2 font-comic">
                 ¡Bienvenido! Recrea esta figura:
               </h2>
               {IMAGES[indiceImagen] ? (
@@ -719,7 +743,7 @@ const handleListoParaFinalizar = () => {
         </div>
   
         {/* 💬 CHAT */}
-        <div className="col-span-4 bg-gradient-to-br from-pink-100 via-rose-100 to-rose-200 border-[4px] border-rose-300 p-6 rounded-3xl shadow-2xl h-full flex flex-col justify-between">
+        <div className="col-span-4 bg-gradient-to-br from-pink-100 via-rose-100 to-rose-200 border-[6px] border-rose-300 p-6 rounded-3xl shadow-2xl h-full flex flex-col justify-between">
           <div>
             <h2 className="text-2xl font-extrabold text-center text-pink-800 mb-4 tracking-wide drop-shadow-sm flex items-center gap-2">
               💬 Chat del Equipo
@@ -788,11 +812,6 @@ const handleListoParaFinalizar = () => {
         </div>
       </div>
   
-      {/* 🎵 Audio */}
-      <audio autoPlay loop>
-        <source src={musicaFondo} type="audio/mpeg" />
-        Tu navegador no soporta el elemento de audio.
-      </audio>
     </div>
   );
   
