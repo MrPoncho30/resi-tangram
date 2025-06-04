@@ -173,11 +173,11 @@ const handleGenerarPDF = async () => {
     }
 
     // 📊 Sección 3: Gráfica + estadísticas
-    pdf.addPage();
-    pdf.setFontSize(16);
-    pdf.text('Gráfica de Rendimiento', 10, 15);
-    const chartImage = await generarGraficaRadarCanvas(data.estadisticas, data.totales);
-    pdf.addImage(chartImage, 'PNG', 10, 25, 190, 140);
+    // pdf.addPage();
+    // pdf.setFontSize(16);
+    // pdf.text('Gráfica de Rendimiento', 10, 15);
+    // const chartImage = await generarGraficaRadarCanvas(data.estadisticas, data.totales);
+    // pdf.addImage(chartImage, 'PNG', 10, 25, 190, 140);
 
     // 📄 Texto adicional debajo de gráfica
     let offset = 175;
