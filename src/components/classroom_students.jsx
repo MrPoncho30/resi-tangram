@@ -157,6 +157,7 @@ const handleEliminarEstudiante = async (id) => {
           : [],
       }))
     );
+    await fetchEquipos(); // ✅ Actualiza desde el backend, incluyendo equipo.integrantes
 
   } catch (error) {
     console.error("❌ Error al eliminar estudiante:", error);
@@ -483,7 +484,7 @@ const handleDeleteAlumno = async (alumnoId) => {
 
 
   // Crear equipo
-  const handleCreateEquipo = async () => {
+const handleCreateEquipo = async () => {
     try {
       const accessToken = localStorage.getItem('accessToken');
         const teacherId = localStorage.getItem("maestro");
@@ -509,7 +510,7 @@ const handleDeleteAlumno = async (alumnoId) => {
     } catch (error) {
       console.error("Error creando equipo:", error);
     }
-  };
+};
 
   // Asignar alumnos a un equipo
 const handleAsignarAlumnos = async (equipoId) => {

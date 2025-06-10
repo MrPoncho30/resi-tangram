@@ -49,7 +49,8 @@ const Board = () => {
   const [cargandoActividad, setCargandoActividad] = useState(true); // 👈 nuevo
   const [usuariosListosFinalizar, setUsuariosListosFinalizar] = useState([]); // 🔥
   const [segundosRestantes, setSegundosRestantes] = useState(0);
-
+  const [mensajeTiempo, setMensajeTiempo] = useState(null);
+  const [tiempoTerminado, setTiempoTerminado] = useState(false);
 
   const imagenesRef = useRef([]);
 
@@ -65,6 +66,11 @@ const Board = () => {
 
   ///
   const [imagenesCapturadas, setImagenesCapturadas] = useState([]);
+  ///
+  const yaFinalizadoRef = useRef(false);
+  ///
+  const cronometroRef = useRef();
+
 
   useEffect(() => {
     console.log("🧑‍🎓 Datos del estudiante:");
@@ -78,6 +84,7 @@ const Board = () => {
     setPiecesState(PIECES); // Devuelve todas las piezas originales
     setRotation({});        // Reinicia rotación
   };
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       socket.current = new WebSocket(`ws://127.0.0.1:8000/ws/sesiones/${codigoEquipo}/`);
@@ -95,159 +102,165 @@ const Board = () => {
       };
    
   
-         socket.current.onmessage = (e) => {
-        const data = JSON.parse(e.data);
-  
-        if (data.tipo === "actualizar_tangram") {
-          const nuevasPiezas = data.estado.pieces || [];
-          const nuevasRotaciones = data.estado.rotation || {};
-        
-          setBoardPieces(nuevasPiezas);
-          setRotation(nuevasRotaciones);
-        
-          const idsEnTablero = nuevasPiezas.map((p) => p.id);
-          setPiecesState(PIECES.filter((p) => !idsEnTablero.includes(p.id)));
-        
-          // 🔥 Solo si viene el índice explícitamente lo actualizamos
-          if ("indice" in data.estado) {
-            const nuevoIndice = data.estado.indice || 0;
-            setIndiceImagen(nuevoIndice >= IMAGES.length ? IMAGES.length - 1 : nuevoIndice);
-            setUsuariosListos(data.estado.usuarios_listos || []);
-            setUsuariosListosFinalizar(data.estado.usuarios_listos_finalizar || []);
-            
-            if (nuevasPiezas.length > 0 || nuevoIndice > 0) {
-              setIsPlaying(true);
-            }
-          }
-                
-          
-        } else if (data.tipo === "pieza_bloqueada") {
-          setBloqueadas((prev) => ({
-            ...prev,
-            [data.pieza_id]: data.usuario,
-          }));
-          setMovingBy(data.usuario);
-  
-        } else if (data.tipo === "pieza_liberada") {
-          setBloqueadas((prev) => {
-            const nuevo = { ...prev };
-            delete nuevo[data.pieza_id];
-            return nuevo;
-          });
-          setMovingBy(null);
-  
-        } else if (data.tipo === "usuario_listo") {
-          setUsuariosListos(data.usuarios_listos);
-  
-          const totalListos = data.usuarios_listos.length;
-          if (totalListos === totalUsuarios) {
-            console.log("✅ Todos los usuarios están listos. Mandando cambio de imagen...");
-  
-            socket.current?.send(
-              JSON.stringify({
-                tipo: "cambiar_imagen",
-                nuevo_indice: indiceImagen + 1,
-              })
-            );
-          }
-  
-        } else if (data.tipo === "usuarios_listos_finalizar") {
-  setUsuariosListosFinalizar(data.usuarios_listos_finalizar);
+socket.current.onmessage = (e) => {
+  const data = JSON.parse(e.data);
 
-  
-        } else if (data.tipo === "todos_finalizar") {
-          console.log("✅ Todos finalizaron.");
-        
-          if (data.ultimo_en_finalizar === nickname) {
-            console.log("🧠 Yo soy el último. Ejecutando handleFinalizar()");
-            handleFinalizar();  // Solo uno lo hace
-          }
-        
-          // Todos limpian el tablero y sesión visual
-          setIndiceImagen(0);
-          setUsuariosListos([]);
-          setUsuariosListosFinalizar([]);
-          setImagenesCapturadas([]);
-          reiniciarTablero();
-          setIsPlaying(false);
-        }
-        
-         else if (data.tipo === "cambiar_imagen") {
-          let nuevoIndice = data.nuevo_indice;
-        
-          // 🔥 Validamos que no se pase del máximo
-          if (nuevoIndice >= IMAGES.length) {
-            nuevoIndice = IMAGES.length - 1;
-          }
-        
-          setIndiceImagen(nuevoIndice);
-          setUsuariosListos([]);
-          reiniciarTablero();
-        
-          const total = IMAGES.length;
-          const restantes = total - (nuevoIndice + 1);
-        
-          console.log(`📸 Imagen actual: ${nuevoIndice + 1} de ${total}`);
-          console.log(`🧩 Quedan ${restantes} imágenes por mostrar.`);
-        }
-        
-        else if (data.tipo === "estado_actual") {
-          if (data.estado) {
-            const estado = data.estado;
-            const nuevoIndice = estado.indice ?? 0;
-        
-            // 🔥 Validamos que no se pase del total de imágenes
-            setIndiceImagen(nuevoIndice >= IMAGES.length ? IMAGES.length - 1 : nuevoIndice);
-        
-            // 🔥 Actualizamos tablero
-            setBoardPieces(estado.pieces || []);
-            setRotation(estado.rotation || {});
-            setUsuariosListos(estado.usuarios_listos || []);
-            setUsuariosListosFinalizar(estado.usuarios_listos_finalizar || []);
-        
-            // 🔥 Actualizamos piezas disponibles (filtro de las que ya están en el tablero)
-            const piezasOcupadasIds = (estado.pieces || []).map(p => p.id);
-            setPiecesState(PIECES.filter(p => !piezasOcupadasIds.includes(p.id)));
-        
-            // 🔥 Y si ya hay piezas colocadas (o sea que ya están jugando), automáticamente ponemos modo juego activo
-            if ((estado.pieces || []).length > 0 || (estado.indice || 0) > 0) {
-              setIsPlaying(true);
-            }
+  if (data.tipo === "actualizar_tangram") {
+    const nuevasPiezas = data.estado.pieces || [];
+    const nuevasRotaciones = data.estado.rotation || {};
 
-              // 🔥 Si recibimos segundos restantes para el cronometro
-            if (estado.segundos_restantes != null) {
-              setSegundosRestantes(estado.segundos_restantes);
-            }
+    setBoardPieces(nuevasPiezas);
+    setRotation(nuevasRotaciones);
 
-          }
-        }
+    const idsEnTablero = nuevasPiezas.map((p) => p.id);
+    setPiecesState(PIECES.filter((p) => !idsEnTablero.includes(p.id)));
 
-        else if (data.tipo === "usuarios_listos_inicio") {
-          setUsuariosListosInicio(data.usuarios_listos_inicio);
-        } 
-        else if (data.tipo === "todos_listos_inicio") {
-          console.log("✅ Todos listos para iniciar partida!");
-        
-          setIsPlaying(true);
-        
-          const totalSegundos = (actividad.horas || 0) * 3600 + (actividad.minutos || 0) * 60 + (actividad.segundos || 0);
-          setSegundosRestantes(totalSegundos);
-        }
-        
-        else if (data.tipo === "salir_al_login") {
-          console.log("🚪 Redirigiendo al login desde broadcast...");
-          navigate("/components/students/loginStudent", { replace: true });
-        }
-          // ✅ NUEVOS MENSAJES PARA ESTADÍSTICAS
-  else if (data.tipo === "registro_estadisticas_ok") {
+    if ("indice" in data.estado) {
+      const nuevoIndice = data.estado.indice || 0;
+      setIndiceImagen(nuevoIndice >= IMAGES.length ? IMAGES.length - 1 : nuevoIndice);
+      setUsuariosListos(data.estado.usuarios_listos || []);
+      setUsuariosListosFinalizar(data.estado.usuarios_listos_finalizar || []);
+
+      if (nuevasPiezas.length > 0 || nuevoIndice > 0) {
+        setIsPlaying(true);
+      }
+    }
+  }
+
+  if (data.tipo === "pieza_bloqueada") {
+    setBloqueadas((prev) => ({
+      ...prev,
+      [data.pieza_id]: data.usuario,
+    }));
+    setMovingBy(data.usuario);
+  }
+
+  if (data.tipo === "pieza_liberada") {
+    setBloqueadas((prev) => {
+      const nuevo = { ...prev };
+      delete nuevo[data.pieza_id];
+      return nuevo;
+    });
+    setMovingBy(null);
+  }
+
+  if (data.tipo === "usuario_listo") {
+    setUsuariosListos(data.usuarios_listos);
+
+    const totalListos = data.usuarios_listos.length;
+    if (totalListos === totalUsuarios) {
+      console.log("✅ Todos los usuarios están listos. Mandando cambio de imagen...");
+
+      socket.current?.send(
+        JSON.stringify({
+          tipo: "cambiar_imagen",
+          nuevo_indice: indiceImagen + 1,
+        })
+      );
+    }
+  }
+
+  if (data.tipo === "usuarios_listos_finalizar") {
+    setUsuariosListosFinalizar(data.usuarios_listos_finalizar);
+  }
+
+  if (data.tipo === "todos_finalizar") {
+    console.log("✅ Todos finalizaron.");
+
+    if (data.ultimo_en_finalizar === nickname) {
+      console.log("🧠 Yo soy el último. Ejecutando handleFinalizar()");
+      handleFinalizar();
+    }
+
+    setIndiceImagen(0);
+    setUsuariosListos([]);
+    setUsuariosListosFinalizar([]);
+    setImagenesCapturadas([]);
+    reiniciarTablero();
+    setIsPlaying(false);
+  }
+
+  if (data.tipo === "cambiar_imagen") {
+    let nuevoIndice = data.nuevo_indice;
+    if (nuevoIndice >= IMAGES.length) {
+      nuevoIndice = IMAGES.length - 1;
+    }
+
+    setIndiceImagen(nuevoIndice);
+    setUsuariosListos([]);
+    reiniciarTablero();
+
+    const total = IMAGES.length;
+    const restantes = total - (nuevoIndice + 1);
+
+    console.log(`📸 Imagen actual: ${nuevoIndice + 1} de ${total}`);
+    console.log(`🧩 Quedan ${restantes} imágenes por mostrar.`);
+  }
+
+  if (data.tipo === "estado_actual") {
+    if (data.estado) {
+      const estado = data.estado;
+      const nuevoIndice = estado.indice ?? 0;
+
+      setIndiceImagen(nuevoIndice >= IMAGES.length ? IMAGES.length - 1 : nuevoIndice);
+      setBoardPieces(estado.pieces || []);
+      setRotation(estado.rotation || {});
+      setUsuariosListos(estado.usuarios_listos || []);
+      setUsuariosListosFinalizar(estado.usuarios_listos_finalizar || []);
+
+      const piezasOcupadasIds = (estado.pieces || []).map(p => p.id);
+      setPiecesState(PIECES.filter(p => !piezasOcupadasIds.includes(p.id)));
+
+      if ((estado.pieces || []).length > 0 || (estado.indice || 0) > 0) {
+        setIsPlaying(true);
+      }
+
+      if (estado.segundos_restantes != null) {
+        setSegundosRestantes(estado.segundos_restantes);
+      }
+    }
+  }
+
+  if (data.tipo === "usuarios_listos_inicio") {
+    setUsuariosListosInicio(data.usuarios_listos_inicio);
+  }
+
+  if (data.tipo === "todos_listos_inicio") {
+    console.log("✅ Todos listos para iniciar partida!");
+    setIsPlaying(true);
+
+    const totalSegundos = (actividad.horas || 0) * 3600 + (actividad.minutos || 0) * 60 + (actividad.segundos || 0);
+    setSegundosRestantes(totalSegundos);
+  }
+
+  if (data.tipo === "salir_al_login") {
+    console.log("🚪 Redirigiendo al login desde broadcast...");
+    navigate("/components/students/loginStudent", { replace: true });
+  }
+
+  if (data.tipo === "registro_estadisticas_ok") {
     console.log("✅ Estadísticas registradas correctamente para evidencia:", data.evidencia_id);
     alert("🎉 Estadísticas registradas correctamente.");
-  } else if (data.tipo === "registro_estadisticas_error") {
+  }
+  if (data.tipo === "tiempo_agotado") {
+    console.log("⏰ Tiempo terminado. Mostrar modal para finalizar manual.");
+    setTiempoTerminado(true);
+  }
+
+  if (data.tipo === "registro_estadisticas_error") {
     console.error("❌ Error al registrar estadísticas:", data.error);
     alert("❌ Ocurrió un error al registrar estadísticas.");
   }
-        
-      };
+
+  if (data.tipo === "tiempo_actividad") {
+    console.log("🎯 Guardando mensaje tiempo_actividad en estado para Cronometro");
+    console.log("📊 contenido del mensajeTiempo:", data);
+    const tiempoUsadoCalculado = data.tiempo_transcurrido;
+    setMensajeTiempo(data);
+    localStorage.setItem("tiempo_usado", tiempoUsadoCalculado);
+  }
+};
+
     }, 100);
   
     return () => {
@@ -284,6 +297,9 @@ const handleFinalizar = async () => {
       return;
     }
 
+    const tiempoUsado = parseInt (localStorage.getItem("tiempo_usado")) || 0;
+    console.log ("Tiempo Usado:", tiempoUsado);
+
     const response = await fetch("http://127.0.0.1:8000/evidencias/api/crear_evidencia/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -292,6 +308,7 @@ const handleFinalizar = async () => {
         equipo_id: teamId,
         codigo_sesion: codigoEquipo,
         imagenes: imagenesAEnviar,
+        tiempo_segundos: tiempoUsado,
       }),
     });
 
@@ -363,7 +380,20 @@ const handleFinalizar = async () => {
     alert("Error de conexión con el servidor.");
   }
 };
-  
+
+
+const handleTiempoTerminado = () => {
+  if (socket.current && socket.current.readyState === WebSocket.OPEN) {
+    console.log("🕒 Tiempo agotado. Notificando al backend...");
+    socket.current.send(
+      JSON.stringify({
+        tipo: "cronometro_terminado",
+        nickname: nickname,
+      })
+    );
+  }
+};
+
   // Intervalo para verificar si la actividad sigue activa
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -741,7 +771,45 @@ const handleListoParaFinalizar = () => {
             );
           })}
         </div>
-  
+          
+{tiempoTerminado && (
+  <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
+    <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-md w-full border border-gray-200">
+      <h2 className="text-2xl font-extrabold text-red-600 mb-4 animate-pulse">
+        ⏰ ¡Tiempo agotado!
+      </h2>
+
+      <p className="text-gray-700 mb-6 leading-relaxed">
+        El tiempo para completar la actividad ha finalizado.<br />
+        Por favor, presiona <strong className="text-blue-600">Finalizar</strong> para guardar tu avance.
+      </p>
+
+      <button
+        onClick={handleListoParaFinalizar}
+        disabled={usuariosListosFinalizar.includes(nickname)}
+        className={`mt-4 w-full px-6 py-3 text-white text-lg font-semibold rounded-full shadow-md transition duration-300 ${
+          usuariosListosFinalizar.includes(nickname)
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700"
+        }`}
+      >
+        Finalizar
+      </button>
+
+      {usuariosListosFinalizar.length > 0 && (
+        <div className="mt-6 text-left">
+          <h3 className="text-sm font-semibold text-gray-600 mb-2">Jugadores que ya finalizaron:</h3>
+          <ul className="text-sm text-gray-800 list-disc list-inside">
+            {usuariosListosFinalizar.map((user, index) => (
+              <li key={index}>{user}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
         {/* 💬 CHAT */}
         <div className="col-span-4 bg-gradient-to-br from-pink-100 via-rose-100 to-rose-200 border-[6px] border-rose-300 p-6 rounded-3xl shadow-2xl h-full flex flex-col justify-between">
           <div>
@@ -799,15 +867,20 @@ const handleListoParaFinalizar = () => {
               </div>
             )}
 
-  
-            {isPlaying && segundosRestantes !== null && (
-              <div className="mt-4">
-                <Cronometro
-                  segundosIniciales={segundosRestantes}
-                  onTiempoTerminado={handleFinalizar}
-                />
-              </div>
-            )}
+            
+          {isPlaying && socket.current && (
+            <div className="mt-4">
+          <Cronometro
+            ref={cronometroRef}
+            socket={socket.current}
+            mensajeTiempo={mensajeTiempo}
+            onTiempoTerminado={handleTiempoTerminado}
+          />
+
+            </div>
+          )}
+
+
           </div>
         </div>
       </div>
