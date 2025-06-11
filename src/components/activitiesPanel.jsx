@@ -515,46 +515,59 @@ const fetchActividades = async () => {
                 <label className="block mb-4 font-semibold text-gray-700">
                   Tiempo de la Actividad: <span className="text-red-500">*</span>
                   <div className="flex gap-3 mt-2">
-                    <div className="flex flex-col items-center">
-                      <input
-                        type="number"
-                        min="0"
-                        value={newActivity.horas}
-                        onChange={(e) => setNewActivity({ ...newActivity, horas: parseInt(e.target.value) || 0 })}
-                        className="border border-gray-300 p-2 w-16 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        placeholder="hh"
-                        required
-                      />
-                      <span className="text-xs text-gray-500 mt-1">hh</span>
-                    </div>
+                      <div className="flex flex-col items-center">
+                        <input
+                          type="number"
+                          min="0"
+                          max="24"
+                          value={newActivity.horas}
+                          onChange={(e) => {
+                            let val = e.target.value.slice(0, 2); // Máximo 2 dígitos
+                            val = parseInt(val);
+                            setNewActivity({ ...newActivity, horas: isNaN(val) ? 0 : val });
+                          }}
+                          className="border border-gray-300 p-2 w-16 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          placeholder="hh"
+                          required
+                        />
+                        <span className="text-xs text-gray-500 mt-1">hh</span>
+                      </div>
                     <span className="text-lg mt-2">:</span>
-                    <div className="flex flex-col items-center">
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        value={newActivity.minutos}
-                        onChange={(e) => setNewActivity({ ...newActivity, minutos: parseInt(e.target.value) || 0 })}
-                        className="border border-gray-300 p-2 w-16 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        placeholder="mm"
-                        required
-                      />
-                      <span className="text-xs text-gray-500 mt-1">mm</span>
-                    </div>
+                      <div className="flex flex-col items-center">
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={newActivity.minutos}
+                          onChange={(e) => {
+                            let val = e.target.value.slice(0, 2);
+                            val = parseInt(val);
+                            setNewActivity({ ...newActivity, minutos: isNaN(val) ? 0 : val });
+                          }}
+                          className="border border-gray-300 p-2 w-16 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          placeholder="mm"
+                          required
+                        />
+                        <span className="text-xs text-gray-500 mt-1">mm</span>
+                      </div>
                     <span className="text-lg mt-2">:</span>
-                    <div className="flex flex-col items-center">
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        value={newActivity.segundos}
-                        onChange={(e) => setNewActivity({ ...newActivity, segundos: parseInt(e.target.value) || 0 })}
-                        className="border border-gray-300 p-2 w-16 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        placeholder="ss"
-                        required
-                      />
-                      <span className="text-xs text-gray-500 mt-1">ss</span>
-                    </div>
+                          <div className="flex flex-col items-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max="59"
+                              value={newActivity.segundos}
+                              onChange={(e) => {
+                                let val = e.target.value.slice(0, 2);
+                                val = parseInt(val);
+                                setNewActivity({ ...newActivity, segundos: isNaN(val) ? 0 : val });
+                              }}
+                              className="border border-gray-300 p-2 w-16 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+                              placeholder="ss"
+                              required
+                            />
+                            <span className="text-xs text-gray-500 mt-1">ss</span>
+                          </div>
                   </div>
                 </label>
 
@@ -771,35 +784,49 @@ const fetchActividades = async () => {
       <div className="flex gap-2 mb-4">
         <span className="text-sm text-gray-600 mt-1">hh</span>
 
-        <input
+              <input
           type="number"
           placeholder="Horas"
           min="0"
+          max="24"
           value={actividadAEditar?.horas || 0}
-          onChange={(e) => setActividadAEditar({ ...actividadAEditar, horas: parseInt(e.target.value) })}
+          onChange={(e) => {
+            let val = e.target.value.slice(0, 2); // máximo 2 caracteres
+            val = parseInt(val);
+            setActividadAEditar({ ...actividadAEditar, horas: isNaN(val) ? 0 : val });
+          }}
           className="border p-2 rounded-md w-1/3"
         />
+
         <span className="text-sm text-gray-600 mt-1">mm</span>
 
-        <input
-          type="number"
-          placeholder="Min"
-          min="0"
-          max="59"
-          value={actividadAEditar?.minutos || 0}
-          onChange={(e) => setActividadAEditar({ ...actividadAEditar, minutos: parseInt(e.target.value) })}
-          className="border p-2 rounded-md w-1/3"
-        />
+          <input
+            type="number"
+            placeholder="Min"
+            min="0"
+            max="59"
+            value={actividadAEditar?.minutos || 0}
+            onChange={(e) => {
+              let val = e.target.value.slice(0, 2);
+              val = parseInt(val);
+              setActividadAEditar({ ...actividadAEditar, minutos: isNaN(val) ? 0 : val });
+            }}
+            className="border p-2 rounded-md w-1/3"
+          />
         <span className="text-sm text-gray-600 mt-1">ss</span>
-        <input
-          type="number"
-          placeholder="Seg"
-          min="0"
-          max="59"
-          value={actividadAEditar?.segundos || 0}
-          onChange={(e) => setActividadAEditar({ ...actividadAEditar, segundos: parseInt(e.target.value) })}
-          className="border p-2 rounded-md w-1/3"
-        />
+          <input
+            type="number"
+            placeholder="Seg"
+            min="0"
+            max="59"
+            value={actividadAEditar?.segundos || 0}
+            onChange={(e) => {
+              let val = e.target.value.slice(0, 2);
+              val = parseInt(val);
+              setActividadAEditar({ ...actividadAEditar, segundos: isNaN(val) ? 0 : val });
+            }}
+            className="border p-2 rounded-md w-1/3"
+          />
       </div>
 
       <div className="mb-4">
@@ -836,12 +863,30 @@ const fetchActividades = async () => {
 
 <button
   onClick={async () => {
-    if ((actividadAEditar?.banco_tangrams?.length || 0) < 2) {
+    const { horas, minutos, segundos, banco_tangrams } = actividadAEditar || {};
+    const totalTiempo = (horas || 0) + (minutos || 0) + (segundos || 0);
+
+    if ((banco_tangrams?.length || 0) < 2) {
       setErrorImagenes("Debes seleccionar al menos 2 imágenes para guardar la actividad.");
       return;
     }
 
-    setErrorImagenes(""); // Limpia el mensaje si pasa la validación
+    if (horas > 24) {
+      setErrorImagenes("Las horas no pueden ser mayores a 24.");
+      return;
+    }
+
+    if (minutos > 59 || segundos > 59) {
+      setErrorImagenes("Los minutos y segundos no pueden ser mayores a 59.");
+      return;
+    }
+
+    if (totalTiempo === 0) {
+      setErrorImagenes("El tiempo total no puede ser 00:00:00.");
+      return;
+    }
+
+    setErrorImagenes(""); // Limpia errores anteriores
     await handleEditarActividad(actividadAEditar, fetchActividades);
     cerrarModalEditar();
   }}
