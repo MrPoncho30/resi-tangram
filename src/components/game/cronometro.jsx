@@ -17,48 +17,64 @@ const Cronometro = forwardRef(({ socket, onTiempoTerminado, mensajeTiempo }, ref
       console.log("⏱️ Obteniendo tiempo usado: total =", tiempoTotal, ", restantes =", segundosRestantes);
       if (tiempoTotal == null || segundosRestantes == null) return 0;
       const usado = tiempoTotal - segundosRestantes;
-      return usado >= 0 ? usado : 0;
+      return Math.min(Math.max(0, usado), tiempoTotal);
+
     },
   }));
 
-  // Inicializar tiempo a partir de mensajeTiempo
-  useEffect(() => {
-    console.log("🎯 useEffect de mensajeTiempo activado", mensajeTiempo);
+// Inicializar tiempo a partir de mensajeTiempo
+useEffect(() => {
+  console.log("🎯 useEffect de mensajeTiempo activado", mensajeTiempo);
 
-    if (
-      mensajeTiempo &&
-      mensajeTiempo.tiempo_total != null &&
-      mensajeTiempo.tiempo_transcurrido != null
-    ) {
-      const total = mensajeTiempo.tiempo_total;
-      const transcurrido = mensajeTiempo.tiempo_transcurrido;
-      const restantes = total - transcurrido;
+  if (
+    mensajeTiempo &&
+    mensajeTiempo.tiempo_total != null &&
+    mensajeTiempo.tiempo_transcurrido != null
+  ) {
+    const total = mensajeTiempo.tiempo_total;
+    let transcurrido = mensajeTiempo.tiempo_transcurrido;
 
-      console.log("🧠 Calculando tiempo inicial:", total, "-", transcurrido, "=", restantes);
-
-      setTiempoTotal(total);
-      setSegundosRestantes(restantes > 0 ? restantes : 0);
-    } else {
-      console.warn("⚠️ mensajeTiempo incompleto o inválido");
+    if (transcurrido > total) {
+      console.warn("⛔ Tiempo transcurrido inicial excede el total. Corrigiendo.");
+      transcurrido = total;
     }
-  }, [mensajeTiempo]);
+
+    const restantes = total - transcurrido;
+
+    console.log("🧠 Calculando tiempo inicial:", total, "-", transcurrido, "=", restantes);
+
+    setTiempoTotal(total);
+    setSegundosRestantes(restantes > 0 ? restantes : 0);
+  } else {
+    console.warn("⚠️ mensajeTiempo incompleto o inválido");
+  }
+}, [mensajeTiempo]);
+
 
   // Escuchar mensajes del servidor con actualizaciones de tiempo
   useEffect(() => {
     if (!socket) return;
 
-    const handleMessage = (event) => {
-      const data = JSON.parse(event.data);
+const handleMessage = (event) => {
+  const data = JSON.parse(event.data);
 
-      if (data.tipo === "tiempo_actividad") {
-        console.log("📩 tiempo_actividad recibido:", data);
-        const total = data.tiempo_total;
-        const transcurrido = data.tiempo_transcurrido;
-        const restantes = total - transcurrido;
-        setTiempoTotal(total);
-        setSegundosRestantes(restantes > 0 ? restantes : 0);
-      }
-    };
+  if (data.tipo === "tiempo_actividad") {
+    console.log("📩 tiempo_actividad recibido:", data);
+    const total = data.tiempo_total;
+    let transcurrido = data.tiempo_transcurrido;
+
+    if (transcurrido > total) {
+      console.warn("⛔ Tiempo transcurrido del servidor excede el total. Corrigiendo.");
+      transcurrido = total;
+    }
+
+    const restantes = total - transcurrido;
+
+    setTiempoTotal(total);
+    setSegundosRestantes(restantes > 0 ? restantes : 0);
+  }
+};
+
 
     socket.addEventListener("message", handleMessage);
     return () => socket.removeEventListener("message", handleMessage);

@@ -70,6 +70,8 @@ const Board = () => {
   const yaFinalizadoRef = useRef(false);
   ///
   const cronometroRef = useRef();
+  ///
+  const tiempoTotalActividad = (actividad.horas || 0) * 3600 + (actividad.minutos || 0) * 60 + (actividad.segundos || 0);
 
 
   useEffect(() => {
@@ -297,8 +299,20 @@ const handleFinalizar = async () => {
       return;
     }
 
-    const tiempoUsado = parseInt (localStorage.getItem("tiempo_usado")) || 0;
+    const tiempoUsadoRaw = parseInt(localStorage.getItem("tiempo_usado")) || 0;
+    const tiempoUsado = Math.min(tiempoUsadoRaw, tiempoTotalActividad); // Limita al máximo
     console.log ("Tiempo Usado:", tiempoUsado);
+
+
+
+    console.log("📤 Enviando evidencia al backend con JSON:", JSON.stringify({
+  actividad_id: actividad.id,
+  equipo_id: teamId,
+  codigo_sesion: codigoEquipo,
+  imagenes: imagenesAEnviar,
+  tiempo_segundos: tiempoUsado,
+  tiempo_asignado: tiempoTotalActividad,
+}, null, 2));
 
     const response = await fetch("http://127.0.0.1:8000/evidencias/api/crear_evidencia/", {
       method: "POST",
@@ -309,6 +323,7 @@ const handleFinalizar = async () => {
         codigo_sesion: codigoEquipo,
         imagenes: imagenesAEnviar,
         tiempo_segundos: tiempoUsado,
+        tiempo_asignado: tiempoTotalActividad, 
       }),
     });
 
