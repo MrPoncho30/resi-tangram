@@ -297,9 +297,9 @@ const EvidenciaScreen = () => {
           </div>
 
           {/* Rendimiento */}
-          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 flex flex-col items-center">
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6">
             <h2 className="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">Rendimiento del Equipo</h2>
-            <div className="w-full h-[300px] ml-40">
+            <div className="w-full h-[300px] flex justify-center items-center">
               {estadisticas.length > 0 ? (
                 <Radar
                   data={{

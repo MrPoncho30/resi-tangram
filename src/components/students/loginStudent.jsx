@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import myLogo from '../../assets/logo_tan.png';
-import fondo from '../../assets/fondo.png'; 
+import fondo from '../../assets/bg-tangram.png'; 
 
 function LoginStudent({ onJoin }) {
   const [teamCode, setTeamCode] = useState("");
@@ -123,77 +123,81 @@ function LoginStudent({ onJoin }) {
   }, []);
 
   return (
-    <div
-      className="relative flex h-screen items-center justify-center bg-cover bg-center"
-      style={{ backgroundImage: `url(${fondo})` }}
-    >
-      <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
-      <div className="bg-white p-8 rounded-3xl shadow-lg w-96 text-center relative overflow-hidden">
-        <div className="flex justify-center mb-4">
-          <img src={myLogo} alt="Logo" className="h-14 w-14" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-700 mb-4">Ingresa con tu equipo Tangram</h2>
-        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
-
-        {!isCodeValidated ? (
-          <form onSubmit={handleValidateCode} className="space-y-4">
-            <input
-              type="text"
-              placeholder="Código del equipo"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              value={teamCode}
-              onChange={(e) => {
-                const valor = e.target.value;
-                const limpio = valor.replace(/\s+/g, '').slice(0, 6);
-                setTeamCode(limpio);
-              }}
-            />
-            <button 
-              type="submit" 
-              className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition duration-300"
-            >
-              Validar código
-            </button>
-          </form>
-        ) : (
-          <div className="mt-4">
-            <h3 className="text-lg font-semibold">Selecciona tu nickname:</h3>
-            <ul className="text-left space-y-2 mt-2">
-              {Array.isArray(teamMembers) && teamMembers.length > 0 ? (
-                teamMembers.map((member) => (
-                  <li key={member.id} className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id={member.id}
-                      name="nickname"
-                      value={member.nickname}
-                      checked={selectedNickname === member.nickname}
-                      onChange={(e) => setSelectedNickname(e.target.value)}
-                      className="cursor-pointer"
-                    />
-                    <label htmlFor={member.id} className="text-gray-700 cursor-pointer">
-                      {member.nickname}
-                    </label>
-                  </li>
-                ))
-              ) : (
-                <p>No se han encontrado integrantes del equipo.</p>
-              )}
-            </ul>
-            <button 
-              onClick={handleJoin} 
-              className={`mt-4 w-full p-3 rounded-lg transition duration-300 ${
-                selectedNickname ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-              disabled={!selectedNickname}
-            >
-              Unirse
-            </button>
-          </div>
-        )}
+  <div
+    className="relative flex h-screen items-center justify-center bg-cover bg-center"
+    style={{ backgroundImage: `url(${fondo})` }}
+  >
+    <div className="absolute inset-0 bg-black bg-opacity-50 z-0" /> 
+    <div className="bg-white/100 p-10 rounded-[30px] shadow-2xl w-96 text-center relative overflow-hidden font-poppins z-10">
+      <div className="flex justify-center mb-5">
+        <img src={myLogo} alt="Logo" className="h-16 w-16 drop-shadow-md" />
       </div>
+      <h2 className="text-2xl font-extrabold text-blue-600 mb-6">¡Bienvenido al mundo Tangram!</h2>
+
+      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
+      {!isCodeValidated ? (
+        <form onSubmit={handleValidateCode} className="space-y-4">
+          <input
+            type="text"
+            placeholder="Escribe tu código aquí"
+            className="w-full p-3 border-2 border-blue-300 rounded-xl focus:ring-4 focus:ring-orange-300 outline-none bg-blue-50 text-center text-lg font-semibold tracking-widest"
+            value={teamCode}
+            onChange={(e) => {
+              const valor = e.target.value;
+              const limpio = valor.replace(/\s+/g, '').slice(0, 6);
+              setTeamCode(limpio);
+            }}
+          />
+          <button
+            type="submit"
+            className="w-full bg-orange-400 text-blue-900 font-bold p-3 rounded-xl hover:bg-orange-500 transition duration-300 shadow-md"
+          >
+            Validar código
+          </button>
+        </form>
+      ) : (
+        <div className="mt-4">
+          <h3 className="text-lg font-bold text-black-700 mb-3">Selecciona tu nickname:</h3>
+          <ul className="text-left space-y-2 mt-2">
+            {Array.isArray(teamMembers) && teamMembers.length > 0 ? (
+              teamMembers.map((member) => (
+                <li key={member.id} className="flex items-center space-x-3">
+                  <input
+                    type="radio"
+                    id={member.id}
+                    name="nickname"
+                    value={member.nickname}
+                    checked={selectedNickname === member.nickname}
+                    onChange={(e) => setSelectedNickname(e.target.value)}
+                    className="cursor-pointer accent-orange-400 scale-125"
+                  />
+                  <label htmlFor={member.id} className="text-blue-800 font-medium cursor-pointer">
+                    {member.nickname}
+                  </label>
+                </li>
+              ))
+            ) : (
+              <p className="text-gray-600">No se han encontrado integrantes del equipo.</p>
+            )}
+          </ul>
+          <button
+            onClick={handleJoin}
+            className={`mt-5 w-full p-3 rounded-xl transition duration-300 font-bold ${
+              selectedNickname
+                ? "bg-orange-500 text-white hover:bg-orange-600"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
+            disabled={!selectedNickname}
+          >
+            Unirse al juego
+          </button>
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
+
 }
 
 export default LoginStudent;

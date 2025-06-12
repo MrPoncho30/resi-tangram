@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaLock } from 'react-icons/fa';
 import Swal from 'sweetalert2'; 
 
-import myImage from '../assets/img_login_teacher.jpg'; 
-import myImage2 from '../assets/fondo.png'; 
+import myImage2 from '../assets/bg-tangram.png'; 
 import myLogo from '../assets/logo_tan.png';
 
 function LoginTeacher() {
@@ -15,33 +14,35 @@ function LoginTeacher() {
 
   const navigate = useNavigate();
 
+  // 🔒 Redirige si ya hay sesión activa
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-  
-    const loginData = {
-      correo,
-      contrasena,
-    };
+    setLoading(true);
   
     try {
-      setLoading(true);
-  
       const response = await fetch('http://127.0.0.1:8000/maestros/api/autentificar_maestro/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correo, contrasena }),
       });
   
       const result = await response.json();
   
       if (response.ok) {
         console.log('Inicio de sesión exitoso:', result);
-
-        localStorage.setItem('accessToken', result.access_token);
+        localStorage.setItem('authToken', result.access_token);
         localStorage.setItem('refreshToken', result.refresh_token);
+        if (result.id_maestro) {
+          localStorage.setItem('maestro', result.id_maestro);
+        }
 
         await Swal.fire({
           icon: 'success',
@@ -50,16 +51,7 @@ function LoginTeacher() {
           timer: 2000,
           showConfirmButton: false
         });
-  
-        if (result.id_maestro) {
-          localStorage.setItem('maestro', result.id_maestro); 
-        }
-  
-        const teacherId = localStorage.getItem('maestro');
-        console.log('ID del maestro:', teacherId);
 
-
-  
         navigate('/dashboard', { replace: true });
       } else {
         setError(result.message || 'Credenciales incorrectas');
@@ -85,63 +77,80 @@ function LoginTeacher() {
   const handleCreateTeacher = () => {
     navigate('/createTeacher');
   };
-
+  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100" 
-         style={{ backgroundImage: `url(${myImage2})`, backgroundSize: 'cover', backgroundPosition: 'center', backdropFilter: 'blur(10px)' }}>
-
-      <div className="w-full max-w-md bg-white bg-opacity-80 p-8 rounded-2xl shadow-lg backdrop-blur-md border border-gray-200">
-        <div className="flex justify-center mb-4">
-          <img src={myLogo} alt="Logo" className="h-14 w-14" />
+    <div
+      className="min-h-screen flex items-center justify-center bg-gray-200"
+      style={{
+        backgroundImage: `url(${myImage2})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className='absolute inset-0 bg-black opacity-50'></div>
+      <div className="w-full max-w-md bg-white bg-opacity-95 p-10 rounded-2xl shadow-2xl border border-gray-300 z-20">
+        <div className="flex justify-center mb-6">
+          <img src={myLogo} alt="Logo" className="h-16 w-16" />
         </div>
-        <h2 className="text-2xl font-semibold text-center text-gray-700 mb-6">
-          Iniciar Sesión
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <label htmlFor="correo" className="sr-only">Correo</label>
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
-              <FaEnvelope />
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">Bienvenido Profesor</h2>
+        <p className="text-center text-gray-500 mb-6 text-sm">
+          Por favor, ingrese sus credenciales institucionales
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="correo" className="text-sm font-medium text-gray-700">Correo Institucional</label>
+            <div className="relative mt-1">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <FaEnvelope />
+              </div>
+              <input
+                type="email"
+                id="correo"
+                value={correo}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="correo@escuela.edu.mx"
+                required
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-gray-600"
+              />
             </div>
-            <input
-              type="email"
-              id="correo"
-              value={correo}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Correo Electrónico"
-              required
-              className="w-full px-12 py-3 border border-gray-300 rounded-lg focus:ring-gray-600 focus:border-gray-600 placeholder-gray-400 bg-transparent"
-            />
           </div>
-          <div className="relative">
-            <label htmlFor="contrasena" className="sr-only">Contraseña</label>
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
-              <FaLock />
+
+          <div>
+            <label htmlFor="contrasena" className="text-sm font-medium text-gray-700">Contraseña</label>
+            <div className="relative mt-1">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <FaLock />
+              </div>
+              <input
+                type="password"
+                id="contrasena"
+                value={contrasena}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Ingrese su contraseña"
+                required
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-gray-600"
+              />
             </div>
-            <input
-              type="password"
-              id="contrasena"
-              value={contrasena}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Contraseña"
-              required
-              className="w-full px-12 py-3 border border-gray-300 rounded-lg focus:ring-gray-600 focus:border-gray-600 placeholder-gray-400 bg-transparent"
-            />
           </div>
-          {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+
+          {error && (
+            <div className="text-red-500 text-sm text-center font-medium">{error}</div>
+          )}
+
           <div className="flex flex-col items-center">
             <button
               type="submit"
-              className="w-48 bg-gray-800 text-white py-2 px-4 rounded-lg font-semibold hover:bg-gray-700 transition-all duration-300"
+              className="w-full bg-gray-800 text-white py-3 rounded-lg font-semibold hover:bg-gray-700 transition-all duration-300"
               disabled={loading}
             >
               {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
             </button>
             <a
               onClick={handleCreateTeacher}
-              className="mt-4 text-gray-700 font-semibold cursor-pointer hover:underline"
+              className="group relative mt-5 inline-block text-sm font-medium text-gray-600 hover:text-gray-900 cursor-pointer"
             >
-              Crear Maestro
+              ¿No tiene cuenta? Crear Maestro
+              <span className="absolute left-1/2 bottom-0 h-[1px] w-0 bg-gray-900 transition-all duration-300 group-hover:left-0 group-hover:w-full"></span>
             </a>
           </div>
         </form>

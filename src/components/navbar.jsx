@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaChalkboardTeacher, FaTasks, FaFileAlt, FaDoorOpen } from 'react-icons/fa';
+import { FaChalkboardTeacher, FaTasks, FaFileAlt, FaDoorOpen, FaHome } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 const Navbar = () => {
@@ -39,7 +39,7 @@ const Navbar = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Token ${token}`,
+            'Authorization': `Bearer ${token}`, // ✅ CORREGIDO: antes decía "Token"
             'X-CSRFToken': getCSRFToken(),
           },
           credentials: 'include',
@@ -56,7 +56,10 @@ const Navbar = () => {
         return;
       }
 
+      // ✅ Limpieza completa
       localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('maestro');
 
       await Swal.fire({
         icon: 'success',
@@ -79,18 +82,16 @@ const Navbar = () => {
   };
 
   const navItems = [
+    { path: "/dashboard", label: "Menu", icon: <FaHome/>},
     { path: "/salones", label: "Salones", icon: <FaChalkboardTeacher /> },
     { path: "/activitiesPanel", label: "Actividades", icon: <FaTasks /> },
     { path: "/evidencias", label: "Evidencias", icon: <FaFileAlt /> },
   ];
 
   return (
-<div className="fixed left-0 top-0 h-screen w-60 bg-white bg-opacity-20 backdrop-blur-xl border-r border-white/20 p-6 shadow-2xl z-50">
-      <h2 
-        className="text-xl font-bold text-gray-800 mb-8 text-center cursor-pointer hover:text-blue-600 transition"
-        onClick={() => navigate('/dashboard')}
-      >
-        Menú
+    <div className="fixed left-0 top-0 h-screen w-60 bg-gray-300 bg-opacity-20 backdrop-blur-xl border-r border-white/20 p-6 shadow-2xl z-50">
+      <h2 className="text-xl font-bold text-black-800 mb-8 text-center transition flex items-center justify-center gap-2">
+        Dashboard
       </h2>
 
       <ul className="space-y-4">

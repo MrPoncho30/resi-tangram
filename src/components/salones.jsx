@@ -319,7 +319,7 @@ return (
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Grupos</h1>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/dashboard')}
           className="flex items-center text-gray-700 hover:text-gray-900"
         >
           <FaArrowLeft className="mr-2" /> Volver

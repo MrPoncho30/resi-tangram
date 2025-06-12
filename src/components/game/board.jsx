@@ -58,7 +58,7 @@ const Board = () => {
   const socket = useRef(null);
   const IMAGES = actividad?.banco_tangrams || [];
 
-  /// PRUEBAS CHUY
+
   const [indiceImagen, setIndiceImagen] = useState(0); // Imagen actual
   const [usuariosListos, setUsuariosListos] = useState([]); // Quiénes ya dieron clic
   const [totalUsuarios, setTotalUsuarios] = useState(0); // Total del equipo
@@ -71,7 +71,9 @@ const Board = () => {
   ///
   const cronometroRef = useRef();
   ///
-  const tiempoTotalActividad = (actividad.horas || 0) * 3600 + (actividad.minutos || 0) * 60 + (actividad.segundos || 0);
+  console.log("⏱ Actividad recibida:", actividad);
+  const { horas = 0, minutos = 0, segundos = 0 } = actividad || {};
+  const tiempoTotalActividad = horas * 3600 + minutos * 60 + segundos;
 
 
   useEffect(() => {

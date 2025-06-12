@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BookOpen, Users, FileText } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
@@ -19,46 +19,51 @@ const Card = ({ icon: Icon, title, desc, onClick }) => (
   </div>
 );
 
-
 const Dashboard = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      navigate('/loginTeacher', { replace: true });
+    }
+  }, []);
 
   const handleSalones = () => navigate('../salones');
   const handleActivities = () => navigate('../activitiesPanel');
   const handleEvidencias = () => navigate('../evidencias');
 
-return (
-  <div className="min-h-screen flex bg-gradient-to-r from-gray-100 to-gray-200">
-    <Navbar />
-    <div className="flex-1 p-6 ml-60">
-      <h1 className="text-3xl font-bold text-center text-gray-800 mb-10">
-        Panel de Administrador - Profesor
-      </h1>
+  return (
+    <div className="min-h-screen flex bg-gradient-to-r from-gray-100 to-gray-200">
+      <Navbar />
+      <div className="flex-1 p-6 ml-60">
+        <h1 className="text-3xl font-bold text-center text-gray-800 mb-10">
+          Panel de Administrador - Profesor
+        </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        <Card
-          icon={Users}
-          title="Salones"
-          desc="Administra y visualiza los salones disponibles."
-          onClick={handleSalones}
-        />
-        <Card
-          icon={BookOpen}
-          title="Actividades"
-          desc="Consulta y gestiona las actividades."
-          onClick={handleActivities}
-        />
-        <Card
-          icon={FileText}
-          title="Evidencias"
-          desc="Consulta y gestiona las evidencias."
-          onClick={handleEvidencias}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+          <Card
+            icon={Users}
+            title="Salones"
+            desc="Administra y visualiza los salones disponibles."
+            onClick={handleSalones}
+          />
+          <Card
+            icon={BookOpen}
+            title="Actividades"
+            desc="Consulta y gestiona las actividades."
+            onClick={handleActivities}
+          />
+          <Card
+            icon={FileText}
+            title="Evidencias"
+            desc="Consulta y gestiona las evidencias."
+            onClick={handleEvidencias}
+          />
+        </div>
       </div>
     </div>
-  </div>
-);
-
+  );
 };
 
 export default Dashboard;
