@@ -222,6 +222,11 @@ socket.current.onmessage = (e) => {
       if (estado.segundos_restantes != null) {
         setSegundosRestantes(estado.segundos_restantes);
       }
+
+      if (estado.tiempo_finalizado) {
+      setTiempoTerminado(true);
+    }
+
     }
   }
 
