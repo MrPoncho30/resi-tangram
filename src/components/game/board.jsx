@@ -71,6 +71,8 @@ const Board = () => {
   ///
   const cronometroRef = useRef();
   ///
+  // const [mostrarModalEvidencia, setMostrarModalEvidencia] = useState(false);
+  ///
   console.log("⏱ Actividad recibida:", actividad);
   const { horas = 0, minutos = 0, segundos = 0 } = actividad || {};
   const tiempoTotalActividad = horas * 3600 + minutos * 60 + segundos;
@@ -249,7 +251,7 @@ socket.current.onmessage = (e) => {
 
   if (data.tipo === "registro_estadisticas_ok") {
     console.log("✅ Estadísticas registradas correctamente para evidencia:", data.evidencia_id);
-    alert("🎉 Estadísticas registradas correctamente.");
+    // alert("🎉 Estadísticas registradas correctamente.");
   }
   if (data.tipo === "tiempo_agotado") {
     console.log("⏰ Tiempo terminado. Mostrar modal para finalizar manual.");
@@ -338,7 +340,7 @@ const handleFinalizar = async () => {
 
     if (response.ok) {
       console.log("✅ Evidencia enviada:", data);
-      alert("Evidencia enviada con éxito 🎉");
+      // setMostrarModalEvidencia(true); // Mostrar modal visual
 
       const evidenciaId = data.evidencia_id;
 
@@ -889,7 +891,19 @@ const handleListoParaFinalizar = () => {
               </div>
             )}
 
-            
+            {/* {mostrarModalEvidencia && (
+              <div className="fixed inset-0 z-[999] bg-black bg-opacity-80 flex items-center justify-center">
+                <div className="bg-white rounded-2xl shadow-lg p-6 text-center max-w-sm mx-auto animate-fadeIn">
+                  <h2 className="text-green-600 text-2xl font-bold mb-4">
+                    ✅ Evidencia enviada con éxito 🎉
+                  </h2>
+                  <p className="text-gray-700">
+                    Serás redirigido al login en un instante... por favor, espera.
+                  </p>
+                </div>
+              </div>
+            )} */}
+
           {isPlaying && socket.current && (
             <div className="mt-4">
           <Cronometro

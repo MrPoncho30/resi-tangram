@@ -39,7 +39,7 @@ const Navbar = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`, // ✅ CORREGIDO: antes decía "Token"
+            'Authorization': `Bearer ${token}`, 
             'X-CSRFToken': getCSRFToken(),
           },
           credentials: 'include',
@@ -58,6 +58,7 @@ const Navbar = () => {
 
       // ✅ Limpieza completa
       localStorage.removeItem('authToken');
+      localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('maestro');
 

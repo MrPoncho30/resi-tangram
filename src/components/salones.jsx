@@ -18,7 +18,17 @@ const Salones = () => {
   const [selectedSalon, setSelectedSalon] = useState(null);
   const [editModal, setEditModal] = useState(false);
   const [formError, setFormError] = useState(false);
+    /////
 
+    const [paginaActual, setPaginaActual] = useState(1);
+    const salonesPorPagina = 5;
+
+    const indiceInicio = (paginaActual - 1) * salonesPorPagina;
+    const indiceFin = indiceInicio + salonesPorPagina;
+    const salonesAMostrar = salones.slice(indiceInicio, indiceFin);
+    const totalPaginas = Math.ceil(salones.length / salonesPorPagina);
+
+    /////
   const [formData, setFormData] = useState({
     grado: '',
     grupo: '',
@@ -252,65 +262,128 @@ setSalones(prev => prev.filter(salon => salon.id !== salonId));
     setSelectedSalon(null);
   }
 
-  // Mostrar tabla de salones
- // Mostrar tabla de salones
+useEffect(() => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}, [paginaActual]);
+
+
 const renderTable = () => (
-  <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-    <table className="w-full">
-      <thead>
-        <tr className="bg-gray-200 text-gray-700 text-sm uppercase tracking-wider">
-          <th className="p-3 border-r">Grado</th>
-          <th className="p-3 border-r">Grupo</th>
-          <th className="p-3 border-r">Ciclo Escolar</th>
-          <th className="p-3">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {salones.length > 0 ? (
-          salones.map((salon) => (
-            <tr key={salon.id} className="text-center border-b hover:bg-gray-50 transition">
-              <td className="p-4 text-gray-800 text-sm border-r">{salon.grado}</td>
-              <td className="p-4 text-gray-800 text-sm border-r">{salon.grupo}</td>
-              <td className="p-4 text-gray-800 text-sm border-r">
-                {salon.ciclo_escolar_inicio} - {salon.ciclo_escolar_fin}
-              </td>
-              <td className="p-4">
-                <button
-                  onClick={() =>
-                    navigate(`/salon/${salon.id}/alumnos`, {
-                      state: { grado: salon.grado, grupo: salon.grupo }
-                    })
-                  }
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 mr-2"
-                >
-                  Ver Alumnos
-                </button>
-                <button
-                  onClick={() => handleEditSalon(salon.id)}
-                  className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 mr-2"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleDeleteSalon(salon.id)}
-                  className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300"
-                >
-                  Eliminar
-                </button>
+  <>
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+      <table className="w-full">
+        <thead>
+          <tr className="bg-gray-200 text-gray-700 text-sm uppercase tracking-wider">
+            <th className="p-3 border-r">Grado</th>
+            <th className="p-3 border-r">Grupo</th>
+            <th className="p-3 border-r">Ciclo Escolar</th>
+            <th className="p-3">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {salones.length > 0 ? (
+            salonesAMostrar.map((salon) => (
+              <tr key={salon.id} className="text-center border-b hover:bg-gray-50 transition">
+                <td className="p-4 text-gray-800 text-sm border-r">{salon.grado}</td>
+                <td className="p-4 text-gray-800 text-sm border-r">{salon.grupo}</td>
+                <td className="p-4 text-gray-800 text-sm border-r">
+                  {salon.ciclo_escolar_inicio} - {salon.ciclo_escolar_fin}
+                </td>
+                <td className="p-4">
+                  <button
+                    onClick={() =>
+                      navigate(`/salon/${salon.id}/alumnos`, {
+                        state: { grado: salon.grado, grupo: salon.grupo }
+                      })
+                    }
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 mr-2"
+                  >
+                    Ver Alumnos
+                  </button>
+                  <button
+                    onClick={() => handleEditSalon(salon.id)}
+                    className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 mr-2"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSalon(salon.id)}
+                    className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300"
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="4" className="px-4 py-6 text-center text-gray-500 text-sm">
+                No hay salones disponibles
               </td>
             </tr>
-          ))
-        ) : (
-          <tr>
-            <td colSpan="4" className="px-4 py-6 text-center text-gray-500 text-sm">
-              No hay salones disponibles
-            </td>
-          </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+
+    {/* PAGINACIÓN */}
+    {totalPaginas > 1 && (
+      <div className="flex justify-center mt-4 mb-2 space-x-2 items-center">
+        {paginaActual > 1 && (
+          <button
+            onClick={() => setPaginaActual(paginaActual - 1)}
+            className="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-200"
+          >
+            &laquo;
+          </button>
         )}
-      </tbody>
-    </table>
-  </div>
+
+        {[...Array(totalPaginas)].map((_, index) => {
+          const page = index + 1;
+          const isNear = Math.abs(paginaActual - page) <= 2 || page === 1 || page === totalPaginas;
+
+          if (isNear) {
+            return (
+              <button
+                key={page}
+                onClick={() => setPaginaActual(page)}
+                className={`px-3 py-1 border rounded ${
+                  paginaActual === page
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {page}
+              </button>
+            );
+          }
+
+          if (
+            (paginaActual - 3 === page && page !== 1) ||
+            (paginaActual + 3 === page && page !== totalPaginas)
+          ) {
+            return (
+              <span key={page} className="px-2 text-gray-500">
+                ...
+              </span>
+            );
+          }
+
+          return null;
+        })}
+
+        {paginaActual < totalPaginas && (
+          <button
+            onClick={() => setPaginaActual(paginaActual + 1)}
+            className="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-200"
+          >
+            &raquo;
+          </button>
+        )}
+      </div>
+    )}
+  </>
 );
+
 
 return (
   <div className="min-h-screen bg-gray-100 flex">
@@ -441,7 +514,10 @@ return (
           <input
             type="number"
             value={formData.ciclo_escolar_inicio}
-            onChange={(e) => setFormData(prev => ({ ...prev, ciclo_escolar_inicio: e.target.value }))}
+            onChange={(e) => {
+              const value= e.target.value;
+              if (value.length <=4) {
+              setFormData(prev => ({ ...prev, ciclo_escolar_inicio: e.target.value }))}}}
             className="w-full p-2 border border-gray-300 rounded-md"
             onKeyDown={(e) => e.key === 'e' && e.preventDefault()}
           />
@@ -454,7 +530,10 @@ return (
           <input
             type="number"
             value={formData.ciclo_escolar_fin}
-            onChange={(e) => setFormData(prev => ({ ...prev, ciclo_escolar_fin: e.target.value }))}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value.length<=4) {
+              setFormData(prev => ({ ...prev, ciclo_escolar_fin: e.target.value }))}}}
             className="w-full p-2 border border-gray-300 rounded-md"
             onKeyDown={(e) => e.key === 'e' && e.preventDefault()}
           />

@@ -14,65 +14,73 @@ function LoginTeacher() {
 
   const navigate = useNavigate();
 
-  // 🔒 Redirige si ya hay sesión activa
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+
+  const loginData = {
+    correo,
+    contrasena,
+  };
+
+  try {
     setLoading(true);
-  
-    try {
-      const response = await fetch('http://127.0.0.1:8000/maestros/api/autentificar_maestro/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ correo, contrasena }),
+
+    const response = await fetch('http://127.0.0.1:8000/maestros/api/autentificar_maestro/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(loginData),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      console.log('Inicio de sesión exitoso:', result);
+
+      localStorage.setItem('accessToken', result.access_token);
+      localStorage.setItem('refreshToken', result.refresh_token);
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Inicio de sesión exitoso',
+        text: 'Has accedido correctamente',
+        timer: 2000,
+        showConfirmButton: false
       });
-  
-      const result = await response.json();
-  
-      if (response.ok) {
-        console.log('Inicio de sesión exitoso:', result);
-        localStorage.setItem('authToken', result.access_token);
-        localStorage.setItem('refreshToken', result.refresh_token);
-        if (result.id_maestro) {
-          localStorage.setItem('maestro', result.id_maestro);
-        }
 
-        await Swal.fire({
-          icon: 'success',
-          title: 'Inicio de sesión exitoso',
-          text: 'Has accedido correctamente',
-          timer: 2000,
-          showConfirmButton: false
-        });
-
-        navigate('/dashboard', { replace: true });
-      } else {
-        setError(result.message || 'Credenciales incorrectas');
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: result.message || 'Credenciales incorrectas',
-        });
+      if (result.id_maestro) {
+        localStorage.setItem('maestro', result.id_maestro); 
       }
-    } catch (error) {
-      console.error('Error:', error);
-      setError('Hubo un error al procesar la solicitud');
+
+      const teacherId = localStorage.getItem('maestro');
+      console.log('ID del maestro:', teacherId);
+
+      navigate('/dashboard', { replace: true });
+    } else {
+      setError(result.message || 'Credenciales incorrectas');
       Swal.fire({
         icon: 'error',
-        title: 'Error de conexión',
-        text: 'No se pudo conectar con el servidor',
+        title: 'Error',
+        text: result.message || 'Credenciales incorrectas',
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error('Error:', error);
+    setError('Hubo un error al procesar la solicitud');
+    Swal.fire({
+      icon: 'error',
+      title: 'Error de conexión',
+      text: 'No se pudo conectar con el servidor',
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleCreateTeacher = () => {
     navigate('/createTeacher');

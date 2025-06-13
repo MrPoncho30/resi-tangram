@@ -22,13 +22,6 @@ const Card = ({ icon: Icon, title, desc, onClick }) => (
 const Dashboard = () => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      navigate('/loginTeacher', { replace: true });
-    }
-  }, []);
-
   const handleSalones = () => navigate('../salones');
   const handleActivities = () => navigate('../activitiesPanel');
   const handleEvidencias = () => navigate('../evidencias');

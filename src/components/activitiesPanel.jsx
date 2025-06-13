@@ -28,12 +28,12 @@ const ActivitiesPanel = () => {
   const [salones, setSalones] = useState([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedActivityId, setSelectedActivityId] = useState(null);
-  const imagesPerPage = 4;
+  const imagesPerPage = 10;
   const [formError, setFormError] = useState('');
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [actividadAEditar, setActividadAEditar] = useState(null);
-const [errorImagenes, setErrorImagenes] = useState('');
+  const [errorImagenes, setErrorImagenes] = useState('');
 
   const abrirModalEditar = (actividad) => {
     setActividadAEditar({ ...actividad });
@@ -48,6 +48,15 @@ const [errorImagenes, setErrorImagenes] = useState('');
   const [showVerModal, setShowVerModal] = useState(false);
   const [actividadAVer, setActividadAVer] = useState(null);
 
+  const [paginaActual, setPaginaActual] = useState(1);
+  const actividadesPorPagina = 5;
+
+  const indiceInicio = (paginaActual - 1) * actividadesPorPagina;
+  const indiceFin = indiceInicio + actividadesPorPagina;
+  const actividadesAMostrar = actividades.slice(indiceInicio, indiceFin);
+  const totalPaginas = Math.ceil(actividades.length / actividadesPorPagina);
+
+  
   const bancoTangrams = [
     buitre,
     caballo,
@@ -474,6 +483,9 @@ const fetchActividades = async () => {
     fetchActividades();
   }, []);
   
+useEffect(() => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}, [paginaActual]);
 
   return (
         <div className="min-h-screen bg-gray-100 flex">
@@ -584,7 +596,7 @@ const fetchActividades = async () => {
                     >
                       <FaArrowLeft />
                     </button>
-                    <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mx-4">
+                   <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 mx-2">
                       {bancoTangrams.slice(currentIndex, currentIndex + imagesPerPage).map((imagen, index) => (
                         <div
                           key={index}
@@ -593,10 +605,15 @@ const fetchActividades = async () => {
                             newActivity.imagenes.includes(imagen) ? 'border-blue-500' : 'border-gray-300'
                           }`}
                         >
-                          <img src={imagen} alt={`Tangram ${index + 1}`} className="w-full h-20 object-cover" />
+                          <img
+                            src={imagen}
+                            alt={`Tangram ${index + 1}`}
+                            className="w-full h-28 object-cover transition-transform hover:scale-105"
+                          />
                         </div>
                       ))}
                     </div>
+
                     <button
                       type="button"
                       onClick={goToNextPage}
@@ -638,7 +655,7 @@ const fetchActividades = async () => {
     </thead>
     <tbody>
       {actividades.length > 0 ? (
-        actividades.map((actividad) => (
+        actividadesAMostrar.map((actividad) => (
           <tr key={actividad.id} className="text-center border-b hover:bg-gray-50 transition">
             <td className="p-4 text-sm text-gray-800 border-r last:border-r-0">{actividad.nombre}</td>
             <td className="p-4 text-sm text-gray-800 border-r last:border-r-0">
@@ -719,6 +736,61 @@ const fetchActividades = async () => {
     </tbody>
   </table>
 </div>
+{totalPaginas > 1 && (
+  <div className="flex justify-center mt-4 space-x-2 items-center">
+    {paginaActual > 1 && (
+      <button
+        onClick={() => setPaginaActual(paginaActual - 1)}
+        className="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-200"
+      >
+        &laquo;
+      </button>
+    )}
+
+    {[...Array(totalPaginas)].map((_, index) => {
+      const page = index + 1;
+      const isNear = Math.abs(paginaActual - page) <= 2 || page === 1 || page === totalPaginas;
+
+      if (isNear) {
+        return (
+          <button
+            key={page}
+            onClick={() => setPaginaActual(page)}
+            className={`px-3 py-1 border rounded ${
+              paginaActual === page
+                ? 'bg-blue-500 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {page}
+          </button>
+        );
+      }
+
+      if (
+        (paginaActual - 3 === page && page !== 1) ||
+        (paginaActual + 3 === page && page !== totalPaginas)
+      ) {
+        return (
+          <span key={page} className="px-2 text-gray-500">
+            ...
+          </span>
+        );
+      }
+
+      return null;
+    })}
+
+    {paginaActual < totalPaginas && (
+      <button
+        onClick={() => setPaginaActual(paginaActual + 1)}
+        className="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-200"
+      >
+        &raquo;
+      </button>
+    )}
+  </div>
+)}
 
 
        {/* Modal Asignar a */}

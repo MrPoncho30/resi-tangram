@@ -94,6 +94,15 @@ useEffect(() => {
     }
   };
 
+  const ObtenerValoresUnicosSelect = (array, campo) => {
+    const valores = array.map (ev => ev[campo]).filter(Boolean);
+    return [...new Set(valores)];
+  }
+
+  const opcionesActividad = ObtenerValoresUnicosSelect (evidenciasOriginales, "actividad");
+  const opcionesSalon = ObtenerValoresUnicosSelect(evidenciasOriginales, "salon");
+  const opcionesEquipo = ObtenerValoresUnicosSelect (evidenciasOriginales, "equipo");
+
   const filtrarEvidencias = () => {
     let filtradas = [...evidenciasOriginales];
 
@@ -184,6 +193,11 @@ await fetchEvidenciasCompletas();
 };
 
 
+// Scroll automático al cambiar de página
+useEffect(() => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}, [paginaActual]);
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -215,8 +229,8 @@ await fetchEvidenciasCompletas();
                 className="border border-gray-300 rounded px-2 py-1 w-40"
               >
                 <option value="">Todas</option>
-                {actividades.map((a) => (
-                  <option key={a.id} value={a.nombre}>{a.nombre}</option>
+                {opcionesActividad.map((a, idx) => (
+                  <option key={a.id} value={a}>{a}</option>
                 ))}
               </select>
               <FaSearch className="text-gray-600 cursor-pointer" onClick={filtrarEvidencias} />
@@ -226,30 +240,25 @@ await fetchEvidenciasCompletas();
           <div>
             <label className="block text-sm font-bold text-gray-700">Salón</label>
             <div className="flex items-center gap-2">
-            <select
-              value={salon?.label || ''}
-              onChange={(e) => {
-                const selected = salones.find(s => `${s.grado}° ${s.grupo}` === e.target.value);
-                if (selected) {
-                  setSalon({ id: selected.id, label: `${selected.grado}° ${selected.grupo}` });
-                  fetchEquipos(selected.id); // sigue usando el ID correcto
-                } else {
-                  setSalon(null);
+              <select
+                value={salon?.label || ''}
+                onChange={(e) => {
+                  const label = e.target.value;
+                  if (label) {
+                    setSalon({ id: null, label });
+                  } else {
+                    setSalon(null);
+                  }
+                  setEquipo('');
                   setEquipos([]);
-                }
-                setEquipo('');
-              }}
-              className="border border-gray-300 rounded px-2 py-1 w-40"
-            >
-              <option value="">Todos</option>
-              {salones.map(s => {
-                const label = `${s.grado}° ${s.grupo}`;
-                return (
-                  <option key={s.id} value={label}>{label}</option>
-                );
-              })}
-            </select>
-
+                }}
+                className="border border-gray-300 rounded px-2 py-1 w-40"
+              >
+                <option value="">Todos</option>
+                {opcionesSalon.map((s, idx) => (
+                  <option key={idx} value={s}>{s}</option>
+                ))}
+              </select>
 
               <FaSearch className={`cursor-pointer ${!actividad ? 'opacity-30' : 'text-gray-600'}`} onClick={filtrarEvidencias} />
             </div>
@@ -266,8 +275,8 @@ await fetchEvidenciasCompletas();
 
             >
               <option value="">Todos</option>
-              {equipos.map((e) => (
-                <option key={e.id} value={e.nombre}>{e.nombre}</option>
+              {opcionesEquipo.map((e) => (
+                <option key={e.id} value={e}>{e}</option>
               ))}
             </select>
 
@@ -339,19 +348,67 @@ await fetchEvidenciasCompletas();
 
 
         {/* Paginación */}
-        {totalPaginas > 1 && (
-          <div className="flex justify-center mt-4 space-x-2">
-            {[...Array(totalPaginas)].map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setPaginaActual(index + 1)}
-                className={`px-3 py-1 border rounded ${paginaActual === index + 1 ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-200'}`}
-              >
-                {index + 1}
-              </button>
-            ))}
-          </div>
-        )}
+{totalPaginas > 1 && (
+  <div className="flex justify-center mt-4 space-x-2 items-center">
+
+    {/* Botón Anterior */}
+    {paginaActual > 1 && (
+      <button
+        onClick={() => setPaginaActual(paginaActual - 1)}
+        className="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-200"
+      >
+        &laquo;
+      </button>
+    )}
+
+    {/* Rango de páginas inteligente */}
+    {[...Array(totalPaginas)].map((_, index) => {
+      const page = index + 1;
+      const isNear = Math.abs(paginaActual - page) <= 2 || page === 1 || page === totalPaginas;
+
+      // Mostrar solo si está cerca del actual o es primera / última
+      if (isNear) {
+        return (
+          <button
+            key={page}
+            onClick={() => setPaginaActual(page)}
+            className={`px-3 py-1 border rounded ${
+              paginaActual === page
+                ? 'bg-blue-500 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {page}
+          </button>
+        );
+      }
+
+      // Poner puntos suspensivos solo una vez antes/después de los rangos
+      if (
+        (paginaActual - 3 === page && page !== 1) ||
+        (paginaActual + 3 === page && page !== totalPaginas)
+      ) {
+        return (
+          <span key={page} className="px-2 text-gray-500">
+            ...
+          </span>
+        );
+      }
+
+      return null;
+    })}
+
+    {/* Botón Siguiente */}
+    {paginaActual < totalPaginas && (
+      <button
+        onClick={() => setPaginaActual(paginaActual + 1)}
+        className="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-200"
+      >
+        &raquo;
+      </button>
+    )}
+  </div>
+)}
       </div>
     </div>
   );

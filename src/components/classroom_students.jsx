@@ -425,7 +425,7 @@ const handleUpdateAlumno = async () => {
     setEditingAlumno(null);
     setFormData({ nombre: '', apellidos: '', nickname: '', salon_id: id, equipo: null });
 
-    alert(data.mensaje);
+    // alert(data.mensaje);
   } catch (error) {
     console.error("❌ Error actualizando alumno:", error.message);
     alert("Ocurrió un error al actualizar el alumno.");
@@ -549,9 +549,10 @@ const handleAsignarAlumnos = async (equipoId) => {
     const result = await response.json();
     console.log(result); // Para depurar si la respuesta contiene los datos esperados.
 
-    fetchEquipos(); // Refrescar la lista de equipos
+    await fetchEquipos(); // Refrescar la lista de equipos
     setShowModal(false); // Cerrar el modal
     setSelectedAlumnos([]); // Limpiar los alumnos seleccionados
+    await fetchAlumnos
 
   } catch (error) {
     console.error('Error asignando alumnos:', error);
@@ -731,14 +732,17 @@ const handleToggleEstado = async (equipoId) => {
   }
 };
 
-const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handleAsignar, equipos }) => {
+const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, selectedAlumnos,
+  setSelectedAlumnos, fetchAlumnos, handleAsignar, equipos }) => {
   // Filtrar los alumnos que ya tienen un equipo asignado
   const alumnosConEquipo = alumnos.filter(alumno => alumno.equipo !== null);
 
-  const handleSubmit = () => {
-    handleAsignar(equipoId);
-    setShowModal(false);
+  const handleSubmit = async () => {
+    await handleAsignar(equipoId);  // Asigna alumnos
+    await fetchAlumnos();           // 🔄 Actualiza la lista de alumnos
+    setShowModal(false);            // Cierra el modal
   };
+
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -746,7 +750,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
         <h2 className="text-xl font-bold mb-4">Asignar Alumnos</h2>
         <div className="mb-4">
           <h3 className="font-semibold">Selecciona los alumnos para asignar al equipo:</h3>
-          <div className="space-y-2">
+          <div className="mt-2 max-h-64 overflow-y-auto pr-2 space-y-3">
             {alumnos.map((alumno) => (
               <div key={alumno.id} className="flex items-center">
                 <input
@@ -754,7 +758,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                   id={`alumno-${alumno.id}`}
                   onChange={() => handleCheckboxChange(alumno.id)}
                   checked={selectedAlumnos.includes(alumno.id) || alumnosConEquipo.some(a => a.id === alumno.id)} 
-                  // disabled={alumnosConEquipo.some(a => a.id === alumno.id)}  // Deshabilita si el alumno ya tiene equipo asignado
+                  disabled={alumnosConEquipo.some(a => a.id === alumno.id)}  // Deshabilita si el alumno ya tiene equipo asignado
                 />
                 <label 
                   htmlFor={`alumno-${alumno.id}`} 
@@ -796,12 +800,19 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
     <div className="min-h-screen bg-gray-100 flex">
       <Navbar />
       <div className="flex-1 p-6 ml-60">
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Alumnos del Salón {grado}°{grupo}</h1>
-
-        <button onClick={() => navigate(-1)} className="flex items-center text-gray-700 hover:text-gray-900 mb-4">
-          <FaArrowLeft className="mr-2" /> Volver
-        </button>
-
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 text-center flex-1">
+            Alumnos del Salón {grado}°{grupo}
+          </h1>
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center text-gray-700 hover:text-gray-900"
+          >
+            <FaArrowLeft className="mr-2" />
+            Volver
+          </button>
+        </div>
+        
         <div className="flex mb-6">
           <button
             onClick={() => setShowModal(true)}
@@ -821,9 +832,9 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
 
         <div className="bg-white p-4 rounded-lg shadow-md mb-6">
           <h2 className="text-lg font-semibold mb-2">Lista de Alumnos</h2>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-80 overflow-y-auto rounded-md">
             <table className="w-full bg-white rounded-lg shadow-md">
-              <thead>
+              <thead className='sticky top-0 bg-white'>
                 <tr>
                   <th className="px-4 py-2 text-left">Nombre(s)</th>
                   <th className="px-4 py-2 text-left">Apellidos(s)</th>
@@ -873,9 +884,9 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
         {/* Nuevo contenedor para la lista de equipos */}
         <div className="bg-white p-4 rounded-lg shadow-md mb-6">
           <h2 className="text-lg font-semibold mb-2">Lista de Equipos</h2>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-80 overflow-y-auto rounded-md">
             <table className="w-full bg-white rounded-lg shadow-md">
-              <thead>
+              <thead className='sticky top-0 bg-white'>
                 <tr>
                   <th className="px-4 py-2 text-left">Nombre del Equipo</th>
                   <th className="px-4 py-2 text-left">Integrantes</th>
@@ -1089,7 +1100,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block text-gray-700">NickName</label>
+                  <label className="block text-gray-700">Apodo</label>
                   <input
                     type="text"
                     value={formData.nickname}
@@ -1182,6 +1193,11 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, handl
             setShowModal={setShowAsignarModal}
             alumnos={alumnos}
             handleAsignar={handleAsignarAlumnos}
+            ///
+            selectedAlumnos={selectedAlumnos}
+            setSelectedAlumnos={setSelectedAlumnos}
+            fetchAlumnos={fetchAlumnos} // 
+
           />
         )}
 
