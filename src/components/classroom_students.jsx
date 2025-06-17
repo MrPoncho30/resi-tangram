@@ -747,7 +747,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, selec
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-6 rounded-lg w-96">
-        <h2 className="text-xl font-bold mb-4">Asignar Alumnos</h2>
+        <h2 className="text-xl font-bold mb-4">Asignar alumnos</h2>
         <div className="mb-4">
           <h3 className="font-semibold">Selecciona los alumnos para asignar al equipo:</h3>
           <div className="mt-2 max-h-64 overflow-y-auto pr-2 space-y-3">
@@ -831,7 +831,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, selec
         </div>
 
         <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-          <h2 className="text-lg font-semibold mb-2">Lista de Alumnos</h2>
+          <h2 className="text-lg font-semibold mb-2">Lista de alumnos</h2>
           <div className="overflow-x-auto max-h-80 overflow-y-auto rounded-md">
             <table className="w-full bg-white rounded-lg shadow-md">
               <thead className='sticky top-0 bg-white'>
@@ -883,14 +883,14 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, selec
 
         {/* Nuevo contenedor para la lista de equipos */}
         <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-          <h2 className="text-lg font-semibold mb-2">Lista de Equipos</h2>
+          <h2 className="text-lg font-semibold mb-2">Lista de equipos</h2>
           <div className="overflow-x-auto max-h-80 overflow-y-auto rounded-md">
             <table className="w-full bg-white rounded-lg shadow-md">
               <thead className='sticky top-0 bg-white'>
                 <tr>
-                  <th className="px-4 py-2 text-left">Nombre del Equipo</th>
+                  <th className="px-4 py-2 text-left">Nombre del equipo</th>
                   <th className="px-4 py-2 text-left">Integrantes</th>
-                  <th className="px-4 py-2 text-left">Llave de Equipo</th>
+                  <th className="px-4 py-2 text-left">Llave de equipo</th>
                   <th className="px-4 py-2 text-left">Estado</th>
                   <th className="px-4 py-2 text-left">Acciones</th>
                 </tr>
@@ -937,7 +937,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, selec
                           onClick={() => handleAsignarAlumnosClick(equipo.id)}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 mr-2"
                         >
-                          Asignar Alumnos
+                          Asignar alumnos
                         </button>
 
                         <button
@@ -970,7 +970,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, selec
         {showEditarNombreModal && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
-              <h2 className="text-xl font-bold mb-4">Editar Nombre del Equipo</h2>
+              <h2 className="text-xl font-bold mb-4">Editar nombre del equipo</h2>
               <form>
                 <div className="mb-4">
                   <label className="block text-gray-700">Nuevo Nombre</label>
@@ -1079,7 +1079,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, selec
         {showEditarModal && editingAlumno && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div className="bg-white p-6 rounded-lg w-96">
-              <h2 className="text-xl font-bold mb-4">Editar Alumno</h2>
+              <h2 className="text-xl font-bold mb-4">Editar alumno</h2>
               <form>
                 <div className="mb-4">
                   <label className="block text-gray-700">Nombre</label>
@@ -1205,7 +1205,7 @@ const AsignarAlumnosModal = ({ equipoId, showModal, setShowModal, alumnos, selec
         {showViewEquipoModal && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white p-5 rounded-lg shadow-lg w-1/3">
-              <h2 className="text-xl font-bold mb-4">Estudiantes del Equipo</h2>
+              <h2 className="text-xl font-bold mb-4">Estudiantes del equipo</h2>
 
               {/* Mostrar loading, error o lista */}
               {loading ? (

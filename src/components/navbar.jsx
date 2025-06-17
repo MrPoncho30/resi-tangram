@@ -83,7 +83,7 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { path: "/dashboard", label: "Menu", icon: <FaHome/>},
+    { path: "/dashboard", label: "Menú", icon: <FaHome/>},
     { path: "/salones", label: "Salones", icon: <FaChalkboardTeacher /> },
     { path: "/activitiesPanel", label: "Actividades", icon: <FaTasks /> },
     { path: "/evidencias", label: "Evidencias", icon: <FaFileAlt /> },

@@ -514,7 +514,7 @@ useEffect(() => {
 
               <form onSubmit={handleSubmit} className="mb-4 bg-white p-6 rounded-lg shadow-md border border-gray-200">
                 <label className="block mb-4 font-semibold text-gray-700">
-                  Nombre de la Actividad: <span className="text-red-500">*</span>
+                  Nombre de la actividad: <span className="text-red-500">*</span>
                   <input
                     type="text"
                     value={newActivity.nombre}
@@ -525,7 +525,7 @@ useEffect(() => {
                 </label>
 
                 <label className="block mb-4 font-semibold text-gray-700">
-                  Tiempo de la Actividad: <span className="text-red-500">*</span>
+                  Tiempo de la actividad: <span className="text-red-500">*</span>
                   <div className="flex gap-3 mt-2">
                       <div className="flex flex-col items-center">
                         <input
@@ -976,7 +976,7 @@ useEffect(() => {
 {showVerModal && actividadAVer && (
   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
     <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
-      <h2 className="text-xl font-bold mb-4 text-center">Detalles de la Actividad</h2>
+      <h2 className="text-xl font-bold mb-4 text-center">Detalles de la actividad</h2>
 
       <p><strong>Nombre:</strong> {actividadAVer.nombre}</p>
       <p><strong>Tiempo:</strong> {`${String(actividadAVer.horas).padStart(2, '0')}:${String(actividadAVer.minutos).padStart(2, '0')}:${String(actividadAVer.segundos).padStart(2, '0')}`}</p>

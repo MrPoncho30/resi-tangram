@@ -254,7 +254,7 @@ const EvidenciaScreen = () => {
         </button>
 
         <div className="mb-6 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg p-4 border border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">Información del Equipo</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">Información del equipo</h2>
           <p className="text-sm text-gray-600"><strong>Nombre del equipo:</strong> {nombreEquipo}</p>
           <p className="text-sm text-gray-600"><strong>Actividad:</strong> {nombreActividad}</p>
           <p className="text-sm text-gray-600"><strong>Salón:</strong> {nombreSalon}</p>

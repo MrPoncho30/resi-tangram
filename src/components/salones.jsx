@@ -297,7 +297,7 @@ const renderTable = () => (
                     }
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 mr-2"
                   >
-                    Ver Alumnos
+                    Ver alumnos
                   </button>
                   <button
                     onClick={() => handleEditSalon(salon.id)}
